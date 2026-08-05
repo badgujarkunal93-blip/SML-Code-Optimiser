@@ -1,1 +1,19 @@
+# dependencies
+/node_modules
+/frontend/node_modules
+/backend/node_modules
+
+# builds
+/frontend/.next
+/frontend/out
+/backend/dist
+
+# environment & secret files
 .env
+.env*.local
+*.json.secret
+*.pem
+
+# IDE / System
+.DS_Store
+*.log

@@ -1,19 +1,98 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
+  --background: #020617;
+  --foreground: #dde4e1;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #020617;
+  color: #dde4e1;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   min-height: 100vh;
 }
 
 textarea, code, pre {
-  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+}
+
+/* Glassmorphism & Optima AI Theme Utilities */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+}
+
+.editor-bg {
+  background-color: #020617;
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.2);
+}
+
+.text-emerald-accent {
+  color: #2DD4BF;
+}
+
+.bg-emerald-accent {
+  background-color: #2DD4BF;
+  color: #020617;
+}
+
+.border-emerald-glow {
+  border-color: rgba(45, 212, 191, 0.35);
+}
+
+.hover-scale {
+  transition: transform 0.2s ease-in-out;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* 3D Perspective Hero Cards */
+.perspective-card-container {
+  perspective: 2000px;
+  transform-style: preserve-3d;
+}
+
+.perspective-card {
+  transform: rotateY(-25deg) rotateX(10deg) translateZ(0);
+  transition: transform 0.5s ease-out;
+  box-shadow: -20px 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.perspective-card-1 {
+  transform: rotateY(-25deg) rotateX(10deg) translateZ(-100px) translateX(20px);
+  opacity: 0.8;
+}
+
+.perspective-card-2 {
+  transform: rotateY(-25deg) rotateX(10deg) translateZ(0) translateX(0);
+  opacity: 0.9;
+}
+
+.perspective-card-3 {
+  transform: rotateY(-25deg) rotateX(10deg) translateZ(100px) translateX(-20px);
+}
+
+.perspective-card-4 {
+  transform: rotateY(-25deg) rotateX(10deg) translateZ(200px) translateX(-40px);
+}
+
+.perspective-container:hover .perspective-card-1 {
+  transform: rotateY(-20deg) rotateX(5deg) translateZ(-120px) translateX(30px);
+}
+.perspective-container:hover .perspective-card-2 {
+  transform: rotateY(-20deg) rotateX(5deg) translateZ(0) translateX(0);
+}
+.perspective-container:hover .perspective-card-3 {
+  transform: rotateY(-20deg) rotateX(5deg) translateZ(120px) translateX(-30px);
+}
+.perspective-container:hover .perspective-card-4 {
+  transform: rotateY(-20deg) rotateX(5deg) translateZ(240px) translateX(-60px);
 }
 
 /* Custom sleek scrollbar */
@@ -22,12 +101,12 @@ textarea, code, pre {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #020617;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1e293b;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #334155;
 }

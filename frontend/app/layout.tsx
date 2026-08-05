@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { InteractiveDotGrid } from "@/app/components/InteractiveDotGrid";
 
 export const metadata: Metadata = {
-  title: "SpeedOptimizer AI — High Performance Code Optimization",
-  description: "AI-powered automated code optimization and execution benchmarking",
+  title: "Optima AI — Code Optimizer & Performance Engine",
+  description: "Developer-first AI code optimization platform powered by Algorand x402, Groq LLM, & Piston Execution Engine",
 };
 
 export default function RootLayout({
@@ -13,52 +14,118 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
-        <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 p-2 rounded-lg font-black text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-                ⚡
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-[#020617] text-[#dde4e1] antialiased min-h-screen flex flex-col selection:bg-[#2DD4BF]/30 selection:text-[#57f1db] relative overflow-x-hidden">
+        {/* Interactive Dot Grid WebGL Canvas Background */}
+        <InteractiveDotGrid />
+
+        {/* Optima AI Top NavBar (SaaS Navigation) */}
+        <nav className="bg-[#0e1513]/90 backdrop-blur-xl sticky top-0 z-50 border-b border-[#3c4a46]/30 shadow-xl">
+          <div className="flex justify-between items-center px-4 sm:px-8 py-3.5 max-w-[1440px] mx-auto w-full">
+            <Link href="/" className="flex items-center gap-3 group">
+              <span className="text-2xl font-black tracking-tighter text-[#57f1db] flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-[#57f1db]/10 border border-[#57f1db]/30 flex items-center justify-center text-emerald-400 text-lg shadow-lg shadow-[#57f1db]/10 group-hover:scale-105 transition-transform">
+                  ⚡
+                </span>
+                Optima AI
               </span>
-              <div className="flex flex-col">
-                <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                  SpeedOptimizer <span className="text-emerald-400">AI</span>
-                </span>
-                <span className="text-[10px] text-slate-400 tracking-wider font-semibold uppercase">
-                  LLM Code Benchmarking
-                </span>
-              </div>
             </Link>
 
-            <nav className="flex items-center gap-2 sm:gap-4">
+            {/* Reusable SaaS Routes */}
+            <div className="hidden md:flex gap-6 items-center text-xs font-mono font-semibold">
               <Link
                 href="/"
-                className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                className="text-[#bacac5] hover:text-[#57f1db] transition-colors py-1.5 px-3 rounded-lg hover:bg-[#57f1db]/10"
               >
-                Optimizer
+                Home
+              </Link>
+              <Link
+                href="/workspace"
+                className="text-[#57f1db] font-bold py-1.5 px-3 rounded-lg bg-[#2DD4BF]/10 border border-[#2DD4BF]/30"
+              >
+                Workspace (IDE)
+              </Link>
+              <Link
+                href="/results"
+                className="text-[#bacac5] hover:text-[#57f1db] transition-colors py-1.5 px-3 rounded-lg hover:bg-[#57f1db]/10"
+              >
+                Results
               </Link>
               <Link
                 href="/dashboard"
-                className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                className="text-[#bacac5] hover:text-[#57f1db] transition-colors py-1.5 px-3 rounded-lg hover:bg-[#57f1db]/10"
               >
-                Dashboard
+                Analytics
               </Link>
-              <div className="h-4 w-px bg-slate-800 my-auto hidden sm:block" />
-              <div className="items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium hidden sm:flex">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Backend Ready
-              </div>
-            </nav>
-          </div>
-        </header>
+              <Link
+                href="/history"
+                className="text-[#bacac5] hover:text-[#57f1db] transition-colors py-1.5 px-3 rounded-lg hover:bg-[#57f1db]/10"
+              >
+                History
+              </Link>
+              <Link
+                href="/settings"
+                className="text-[#bacac5] hover:text-[#57f1db] transition-colors py-1.5 px-3 rounded-lg hover:bg-[#57f1db]/10"
+              >
+                Settings
+              </Link>
+            </div>
 
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/workspace"
+                className="bg-[#2DD4BF] hover:bg-[#57f1db] text-[#020617] font-mono font-bold text-xs px-5 py-2 rounded-full shadow-lg shadow-[#2DD4BF]/20 transition-all hover-scale"
+              >
+                Optimize Now →
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        <main className="flex-grow flex flex-col w-full max-w-[1440px] mx-auto px-4 sm:px-8 py-6 relative z-10">
           {children}
         </main>
 
-        <footer className="border-t border-slate-800 bg-slate-900/50 py-6 text-center text-xs text-slate-500">
-          <p>© 2026 SpeedOptimizer AI — Powered by Groq llama-3.3-70b & Piston Execution Engine</p>
+        {/* Footer */}
+        <footer className="bg-[#0e1513] border-t border-[#3c4a46]/20 mt-16 py-8 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-center px-4 sm:px-8 max-w-[1440px] mx-auto font-mono text-xs text-[#bacac5] w-full gap-4">
+            <div>© 2026 Optima AI. Developer-First Code Optimization SaaS Platform.</div>
+            <div className="flex flex-wrap gap-6">
+              <Link href="/" className="hover:text-[#57f1db] transition-colors">
+                Home
+              </Link>
+              <Link href="/workspace" className="hover:text-[#57f1db] transition-colors">
+                Workspace
+              </Link>
+              <Link href="/results" className="hover:text-[#57f1db] transition-colors">
+                Results
+              </Link>
+              <Link href="/dashboard" className="hover:text-[#57f1db] transition-colors">
+                Analytics
+              </Link>
+              <Link href="/history" className="hover:text-[#57f1db] transition-colors">
+                History
+              </Link>
+              <Link href="/settings" className="hover:text-[#57f1db] transition-colors">
+                Settings
+              </Link>
+            </div>
+            <div className="font-bold tracking-widest text-[#57f1db] hidden md:block">
+              OPTIMA AI
+            </div>
+          </div>
         </footer>
       </body>
     </html>

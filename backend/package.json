@@ -1,0 +1,29 @@
+{
+  "name": "optichain-backend",
+  "version": "1.0.0",
+  "description": "OptiChain x402 Server powered by Hono, Firebase and Algorand",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.8",
+    "@x402/avm": "latest",
+    "@x402/core": "latest",
+    "@x402/fetch": "latest",
+    "@x402/hono": "latest",
+    "algosdk": "^3.1.1",
+    "dotenv": "^16.4.7",
+    "firebase-admin": "^13.1.0",
+    "groq-sdk": "^0.15.0",
+    "hono": "^4.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
