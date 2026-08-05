@@ -103,14 +103,16 @@ class X402Client {
       throw new Error('Failed to generate test cases')
     }
     const data = await res.json()
-    return (data.testCases || []).map((tc: any, idx: number) => ({
-      id: `tc_${Date.now()}_${idx}`,
-      category: tc.category || 'Normal Input',
-      input: tc.input || '',
-      expectedOutput: tc.expectedOutput || '',
-      status: 'PENDING',
-      importance: tc.importance || 'Edge case testing',
-    }))
+    return (data.testCases || []).map(
+      (tc: { category?: string; input?: string; expectedOutput?: string; importance?: string }, idx: number) => ({
+        id: `tc_${Date.now()}_${idx}`,
+        category: tc.category || 'Normal Input',
+        input: tc.input || '',
+        expectedOutput: tc.expectedOutput || '',
+        status: 'PENDING',
+        importance: tc.importance || 'Edge case testing',
+      })
+    )
   }
 
   async sendChatMessage(message: string, history: Array<{ role: string; content: string }> = []): Promise<string> {

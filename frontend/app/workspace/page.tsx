@@ -64,12 +64,12 @@ function generateDiffLines(oldCode: string, newCode: string) {
 export default function WorkspacePage() {
   const [code, setCode] = useState<string>(DEFAULT_EXAMPLE);
   const [stdinInput, setStdinInput] = useState<string>("");
-  const [manualLangOverride, setManualLangOverride] = useState<string>("");
+  const manualLangOverride = "";
   const [targetConvertLang, setTargetConvertLang] = useState<string>("");
   const [optMode, setOptMode] = useState<string>("auto");
   const [loading, setLoading] = useState<boolean>(false);
   const [executing, setExecuting] = useState<boolean>(false);
-  const [pipelineStage, setPipelineStage] = useState<number>(0);
+  const [, setPipelineStage] = useState<number>(0);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<OptimizationResponse | null>(null);
@@ -106,9 +106,9 @@ export default function WorkspacePage() {
 
   // Wallet Connection state
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-  const [pendingPayment, setPendingPayment] = useState<PaymentDetails | null>(null);
-  const [paymentResolver, setPaymentResolver] = useState<((approved: boolean) => void) | null>(null);
+  const [, setShowPaymentModal] = useState<boolean>(false);
+  const [, setPendingPayment] = useState<PaymentDetails | null>(null);
+  const [, setPaymentResolver] = useState<((approved: boolean) => void) | null>(null);
 
   useEffect(() => {
     if (!isDevBypass) {
@@ -116,7 +116,7 @@ export default function WorkspacePage() {
         if (addr) setWalletAddress(addr);
       });
     }
-  }, []);
+  }, [isDevBypass]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -128,9 +128,10 @@ export default function WorkspacePage() {
       setError(null);
       const addr = await x402Client.connectWallet();
       setWalletAddress(addr);
-    } catch (err: any) {
-      if (err.message !== "Wallet connection was closed.") {
-        setError(err.message || "Failed to connect Pera Wallet");
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      if (errorObj.message !== "Wallet connection was closed.") {
+        setError(errorObj.message || "Failed to connect Pera Wallet");
       }
     }
   };
@@ -145,7 +146,7 @@ export default function WorkspacePage() {
       const origRes = await x402Client.executeCode(code, activeInputLang, stdinInput);
       setOrigExecResult(origRes);
 
-      let optCodeToRun = result ? result.optimizedCode : code;
+      const optCodeToRun = result ? result.optimizedCode : code;
       const optRes = await x402Client.executeCode(optCodeToRun, targetConvertLang || activeInputLang, stdinInput);
       setOptExecResult(optRes);
 
@@ -163,8 +164,9 @@ export default function WorkspacePage() {
       );
       setTestCases(updatedTCs);
       setRightTab("execution");
-    } catch (err: any) {
-      setError(err.message || "Execution verification failed");
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      setError(errorObj.message || "Execution verification failed");
     } finally {
       setExecuting(false);
     }
@@ -178,8 +180,9 @@ export default function WorkspacePage() {
       const generated = await x402Client.generateTestCases(code, activeInputLang);
       setTestCases((prev) => [...prev, ...generated]);
       setRightTab("testcases");
-    } catch (err: any) {
-      setError(err.message || "Failed to generate test cases");
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      setError(errorObj.message || "Failed to generate test cases");
     } finally {
       setGeneratingTestCases(false);
     }
@@ -231,10 +234,11 @@ export default function WorkspacePage() {
       const aiSummary = `⚡ **Optimization Complete!**\n\n- **Complexity:** ${response.timeComplexity?.original || "O(n²)"} → ${response.timeComplexity?.optimized || "O(n)"}\n- **Wall-Clock Speedup:** ${response.metrics.originalTimeMs}ms → ${response.metrics.optimizedTimeMs}ms (+${response.metrics.improvementPct}% faster)\n- **Confidence:** ${response.optimizationConfidence || 98}%\n\n${response.reasoning}`;
       setChatMessages((prev) => [...prev, { role: "assistant", content: aiSummary }]);
       setRightTab("ai");
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearInterval(stagesTimer);
-      if (err.message !== "Payment was cancelled by user") {
-        setError(err.message || "Failed to optimize code");
+      const errorObj = err as { message?: string };
+      if (errorObj.message !== "Payment was cancelled by user") {
+        setError(errorObj.message || "Failed to optimize code");
       }
     } finally {
       setLoading(false);
@@ -254,8 +258,9 @@ export default function WorkspacePage() {
     try {
       const reply = await x402Client.sendChatMessage(text, newHistory);
       setChatMessages([...newHistory, { role: "assistant", content: reply }]);
-    } catch (err: any) {
-      setChatMessages([...newHistory, { role: "assistant", content: `Error: ${err.message}` }]);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      setChatMessages([...newHistory, { role: "assistant", content: `Error: ${errorObj.message || 'Unknown error'}` }]);
     } finally {
       setChatLoading(false);
     }
@@ -272,12 +277,12 @@ export default function WorkspacePage() {
             <span className="text-[#bacac5] text-[10px]">({detected.confidence}% Confidence)</span>
           </div>
 
-          <div className="flex items-center gap-2 border-l border-[#3c4a46]/40 pl-4">
-            <span className="text-[#bacac5]">Mode:</span>
+          <div className="flex items-center gap-2 border-l border-[var(--border)] pl-4">
+            <span className="text-[var(--text-secondary)]">Mode:</span>
             <select
               value={optMode}
               onChange={(e) => setOptMode(e.target.value)}
-              className="bg-[#0e1513] text-[#2DD4BF] font-bold border border-[#3c4a46]/50 rounded-lg px-3 py-1 outline-none"
+              className="bg-[var(--card-elevated)] text-[var(--primary)] font-bold border border-[var(--border)] rounded-lg px-3 py-1 outline-none"
             >
               {OPTIMIZATION_MODES.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -287,12 +292,12 @@ export default function WorkspacePage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 border-l border-[#3c4a46]/40 pl-4">
-            <span className="text-[#bacac5]">Convert:</span>
+          <div className="flex items-center gap-2 border-l border-[var(--border)] pl-4">
+            <span className="text-[var(--text-secondary)]">Convert:</span>
             <select
               value={targetConvertLang}
               onChange={(e) => setTargetConvertLang(e.target.value)}
-              className="bg-[#0e1513] text-teal-300 border border-[#3c4a46]/50 rounded-lg px-3 py-1 outline-none"
+              className="bg-[var(--card-elevated)] text-[var(--primary)] border border-[var(--border)] rounded-lg px-3 py-1 outline-none"
             >
               <option value="">(Same: {activeInputLang})</option>
               {LANGUAGES.filter((l) => l.id !== activeInputLang).map((l) => (
@@ -306,17 +311,17 @@ export default function WorkspacePage() {
 
         <div className="flex items-center gap-3">
           {isDevBypass ? (
-            <span className="text-[10px] text-[#8b9cf5] bg-[#8b9cf5]/10 px-3 py-1 rounded-full border border-[#8b9cf5]/30">
+            <span className="text-[10px] text-sky-400 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/30">
               Dev Mode Bypass ✓
             </span>
           ) : walletAddress ? (
-            <span className="text-[10px] text-[#2DD4BF] bg-[#2DD4BF]/10 px-3 py-1 rounded-full border border-[#2DD4BF]/30 font-semibold">
+            <span className="text-[10px] text-[var(--primary)] bg-[var(--primary)]/10 px-3 py-1 rounded-full border border-[var(--primary)]/30 font-semibold">
               Pera: {walletAddress.slice(0, 6)}...
             </span>
           ) : (
             <button
               onClick={handleConnectWallet}
-              className="bg-[#8b9cf5] text-white px-4 py-1.5 rounded-full font-bold text-xs"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-full font-bold text-xs shadow"
             >
               Connect Wallet
             </button>
@@ -325,7 +330,7 @@ export default function WorkspacePage() {
           <button
             onClick={handleRunAndVerifyAll}
             disabled={executing}
-            className="bg-[#0F172A] hover:bg-slate-800 text-[#57f1db] border border-[#2DD4BF]/30 font-bold px-4 py-1.5 rounded-lg"
+            className="bg-[var(--bg-secondary)] hover:bg-[var(--card-elevated)] text-[var(--primary)] border border-[var(--primary)]/30 font-bold px-4 py-1.5 rounded-lg transition-colors"
           >
             {executing ? "Executing..." : "⚡ Run & Verify"}
           </button>
@@ -333,7 +338,7 @@ export default function WorkspacePage() {
           <button
             onClick={handleOptimize}
             disabled={loading || !code.trim()}
-            className="bg-[#2DD4BF] hover:bg-[#57f1db] text-[#020617] font-bold px-5 py-1.5 rounded-lg shadow-md"
+            className="bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-bold px-5 py-1.5 rounded-lg shadow-md transition-all hover-scale"
           >
             {loading ? "Optimizing..." : "⚡ Optimize Code"}
           </button>
@@ -341,19 +346,19 @@ export default function WorkspacePage() {
       </div>
 
       {/* Standard Input stdin bar */}
-      <div className="bg-[#0e1513] p-3 rounded-xl border border-[#3c4a46]/30 font-mono text-xs">
-        <span className="text-[10px] text-[#bacac5] font-bold block mb-1">Standard Input (stdin):</span>
+      <div className="bg-[var(--card)] p-3 rounded-xl border border-[var(--border)] font-mono text-xs shadow-sm">
+        <span className="text-[10px] text-[var(--text-muted)] font-bold block mb-1">Standard Input (stdin):</span>
         <input
           type="text"
           value={stdinInput}
           onChange={(e) => setStdinInput(e.target.value)}
           placeholder="Enter stdin line data (e.g. 5 10)"
-          className="w-full bg-[#020617] text-slate-200 p-2 rounded-lg border border-[#3c4a46]/40 outline-none"
+          className="w-full bg-[var(--bg-secondary)] text-[var(--text-primary)] p-2 rounded-lg border border-[var(--border)] outline-none"
         />
       </div>
 
       {paymentStatus && (
-        <div className="bg-[#2DD4BF]/10 border border-[#2DD4BF]/30 p-3 rounded-xl text-xs text-[#2DD4BF] font-mono">
+        <div className="bg-[var(--primary)]/10 border border-[var(--primary)]/30 p-3 rounded-xl text-xs text-[var(--primary)] font-mono">
           💳 {paymentStatus}
         </div>
       )}
@@ -368,53 +373,53 @@ export default function WorkspacePage() {
       <div className="flex flex-col lg:flex-row gap-6 w-full items-start">
         
         {/* CENTER MONACO SOURCE EDITOR */}
-        <div className="flex-1 flex flex-col w-full glass-panel rounded-2xl overflow-hidden border border-[#3c4a46]/30 shadow-2xl">
-          <div className="bg-[#0F172A] p-3 border-b border-[#3c4a46]/30 flex justify-between items-center font-mono text-xs text-[#bacac5]">
-            <span className="font-bold text-white">Source Code Workspace</span>
+        <div className="flex-1 flex flex-col w-full glass-panel rounded-2xl overflow-hidden border border-[var(--border)] shadow-2xl">
+          <div className="bg-[var(--bg-secondary)] p-3 border-b border-[var(--border)] flex justify-between items-center font-mono text-xs text-[var(--text-secondary)]">
+            <span className="font-bold text-[var(--text-primary)]">Source Code Workspace</span>
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode("split")}
-                className={`px-2.5 py-1 rounded text-[10px] ${viewMode === "split" ? "bg-[#2DD4BF]/20 text-[#57f1db] font-bold" : "text-slate-400"}`}
+                className={`px-2.5 py-1 rounded text-[10px] ${viewMode === "split" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}
               >
                 Split View
               </button>
               <button
                 onClick={() => setViewMode("unified")}
-                className={`px-2.5 py-1 rounded text-[10px] ${viewMode === "unified" ? "bg-[#2DD4BF]/20 text-[#57f1db] font-bold" : "text-slate-400"}`}
+                className={`px-2.5 py-1 rounded text-[10px] ${viewMode === "unified" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}
               >
                 Unified Diff
               </button>
             </div>
           </div>
 
-          <div className="editor-bg p-6 font-mono text-xs min-h-[440px]">
+          <div className="p-6 font-mono text-xs min-h-[440px] bg-[var(--bg)]">
             {result ? (
               viewMode === "split" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <div className="text-slate-400 font-bold uppercase text-[10px]">Original</div>
-                    <pre className="p-3 bg-[#020617] text-slate-300 rounded-lg border border-[#3c4a46]/30 overflow-x-auto leading-relaxed">
+                    <div className="text-[var(--text-muted)] font-bold uppercase text-[10px]">Original</div>
+                    <pre className="p-3 bg-[var(--card)] text-[var(--text-secondary)] rounded-lg border border-[var(--border)] overflow-x-auto leading-relaxed">
                       <code>{code}</code>
                     </pre>
                   </div>
                   <div className="space-y-2">
-                    <div className="text-[#2DD4BF] font-bold uppercase text-[10px]">Optimized</div>
-                    <pre className="p-3 bg-[#020617] text-[#2DD4BF] rounded-lg border border-[#2DD4BF]/30 overflow-x-auto leading-relaxed">
+                    <div className="text-[var(--primary)] font-bold uppercase text-[10px]">Optimized</div>
+                    <pre className="p-3 bg-[var(--card)] text-[var(--primary)] rounded-lg border border-[var(--primary)]/40 overflow-x-auto leading-relaxed">
                       <code>{result.optimizedCode}</code>
                     </pre>
                   </div>
                 </div>
               ) : (
-                <div className="p-3 bg-[#020617] text-slate-300 rounded-lg border border-[#3c4a46]/30">
+                <div className="p-3 bg-[var(--card)] text-[var(--text-primary)] rounded-lg border border-[var(--border)]">
                   {generateDiffLines(code, result.optimizedCode).map((line, idx) => (
                     <div
                       key={idx}
                       className={
                         line.type === "added"
-                          ? "bg-emerald-500/10 text-emerald-300 px-2 py-0.5"
+                          ? "bg-emerald-500/10 text-[#34D399] px-2 py-0.5"
                           : line.type === "removed"
                           ? "bg-rose-500/10 text-rose-400 px-2 py-0.5 line-through opacity-80"
-                          : "text-slate-400 px-2 py-0.5"
+                          : "text-[var(--text-secondary)] px-2 py-0.5"
                       }
                     >
                       {line.line}
@@ -427,28 +432,28 @@ export default function WorkspacePage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 rows={16}
-                className="w-full bg-transparent text-slate-100 font-mono text-xs leading-relaxed outline-none border-none resize-y"
+                className="w-full bg-transparent text-[var(--text-primary)] font-mono text-xs leading-relaxed outline-none border-none resize-y"
               />
             )}
           </div>
 
           {/* Bottom Metrics */}
-          <div className="bg-[#0F172A] p-4 border-t border-[#3c4a46]/30 grid grid-cols-4 gap-4 font-mono text-xs text-center">
+          <div className="bg-[var(--bg-secondary)] p-4 border-t border-[var(--border)] grid grid-cols-4 gap-4 font-mono text-xs text-center">
             <div>
-              <div className="text-[10px] text-[#bacac5]">Runtime Saved</div>
-              <div className="text-[#2DD4BF] font-bold text-lg">{result ? `${result.metrics.improvementPct}%` : "+42%"}</div>
+              <div className="text-[10px] text-[var(--text-muted)]">Runtime Saved</div>
+              <div className="text-[var(--primary)] font-bold text-lg">{result ? `${result.metrics.improvementPct}%` : "+42%"}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#bacac5]">Memory Saved</div>
-              <div className="text-white font-bold text-lg">{result ? `${result.estimatedMemoryMb?.optimized || 14}MB` : "124MB"}</div>
+              <div className="text-[10px] text-[var(--text-muted)]">Memory Saved</div>
+              <div className="text-[var(--text-primary)] font-bold text-lg">{result ? `${result.estimatedMemoryMb?.optimized || 14}MB` : "124MB"}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#bacac5]">Complexity</div>
-              <div className="text-emerald-400 font-bold text-lg">{result ? (result.timeComplexity?.optimized || "O(n)") : "O(n)"}</div>
+              <div className="text-[10px] text-[var(--text-muted)]">Complexity</div>
+              <div className="text-[#34D399] font-bold text-lg">{result ? (result.timeComplexity?.optimized || "O(n)") : "O(n)"}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#bacac5]">Confidence</div>
-              <div className="text-white font-bold text-lg">{result?.optimizationConfidence || 98}%</div>
+              <div className="text-[10px] text-[var(--text-muted)]">Confidence</div>
+              <div className="text-[var(--text-primary)] font-bold text-lg">{result?.optimizationConfidence || 98}%</div>
             </div>
           </div>
         </div>
@@ -458,19 +463,19 @@ export default function WorkspacePage() {
           <div className="glass-panel p-1 rounded-xl flex gap-1 font-mono text-xs">
             <button
               onClick={() => setRightTab("ai")}
-              className={`flex-1 py-2 rounded-lg ${rightTab === "ai" ? "bg-[#2DD4BF]/20 text-[#57f1db] font-bold" : "text-[#bacac5]"}`}
+              className={`flex-1 py-2 rounded-lg ${rightTab === "ai" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}
             >
               AI Assistant
             </button>
             <button
               onClick={() => setRightTab("execution")}
-              className={`flex-1 py-2 rounded-lg ${rightTab === "execution" ? "bg-[#2DD4BF]/20 text-[#57f1db] font-bold" : "text-[#bacac5]"}`}
+              className={`flex-1 py-2 rounded-lg ${rightTab === "execution" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}
             >
               Execution
             </button>
             <button
               onClick={() => setRightTab("testcases")}
-              className={`flex-1 py-2 rounded-lg ${rightTab === "testcases" ? "bg-[#2DD4BF]/20 text-[#57f1db] font-bold" : "text-[#bacac5]"}`}
+              className={`flex-1 py-2 rounded-lg ${rightTab === "testcases" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}
             >
               Test Cases
             </button>
@@ -478,7 +483,7 @@ export default function WorkspacePage() {
 
           {rightTab === "ai" && (
             <div className="glass-panel rounded-xl flex-1 flex flex-col min-h-[460px] font-mono text-xs">
-              <div className="p-3 bg-[#0F172A] border-b border-[#3c4a46]/30 font-bold text-white">
+              <div className="p-3 bg-[var(--bg-secondary)] border-b border-[var(--border)] font-bold text-[var(--text-primary)]">
                 Optima AI Chat &amp; Reasoning
               </div>
 
@@ -486,17 +491,17 @@ export default function WorkspacePage() {
                 {chatMessages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`p-3 rounded-xl ${msg.role === "user" ? "bg-[#2DD4BF]/20 text-[#57f1db] ml-auto max-w-[90%]" : "bg-[#020617] text-slate-200"}`}
+                    className={`p-3 rounded-xl ${msg.role === "user" ? "bg-[var(--primary)]/15 text-[var(--primary)] ml-auto max-w-[90%]" : "bg-[var(--bg-secondary)] text-[var(--text-primary)]"}`}
                   >
-                    <div className="text-[10px] text-[#2DD4BF] font-bold mb-1">{msg.role === "user" ? "You" : "Optima AI"}</div>
+                    <div className="text-[10px] text-[var(--primary)] font-bold mb-1">{msg.role === "user" ? "You" : "Optima AI"}</div>
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                   </div>
                 ))}
-                {chatLoading && <div className="text-slate-400 animate-pulse">Processing...</div>}
+                {chatLoading && <div className="text-[var(--text-muted)] animate-pulse">Processing...</div>}
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="p-3 border-t border-[#3c4a46]/30 bg-[#0F172A]">
+              <div className="p-3 border-t border-[var(--border)] bg-[var(--bg-secondary)]">
                 <div className="relative">
                   <input
                     type="text"
@@ -504,9 +509,9 @@ export default function WorkspacePage() {
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
                     placeholder="Ask AI assistant..."
-                    className="w-full bg-[#020617] text-white p-2 pr-8 rounded-lg border border-[#3c4a46]/50 outline-none"
+                    className="w-full bg-[var(--bg)] text-[var(--text-primary)] p-2 pr-8 rounded-lg border border-[var(--border)] outline-none"
                   />
-                  <button onClick={() => handleSendChat()} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#2DD4BF]">
+                  <button onClick={() => handleSendChat()} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--primary)]">
                     ➔
                   </button>
                 </div>
@@ -516,21 +521,21 @@ export default function WorkspacePage() {
 
           {rightTab === "execution" && (
             <div className="glass-panel p-4 rounded-xl space-y-4 font-mono text-xs min-h-[460px]">
-              <div className="font-bold text-white border-b border-[#3c4a46]/30 pb-2">
+              <div className="font-bold text-[var(--text-primary)] border-b border-[var(--border)] pb-2">
                 Piston Execution Sandbox Output
               </div>
 
               <div className="space-y-3">
-                <div className="bg-[#020617] p-3 rounded-lg border border-[#3c4a46]/30">
-                  <span className="text-[#bacac5] text-[10px] block font-bold">Original Code Output:</span>
-                  <pre className="text-slate-300 text-[11px] whitespace-pre-wrap max-h-28 overflow-y-auto">
+                <div className="bg-[var(--bg-secondary)] p-3 rounded-lg border border-[var(--border)]">
+                  <span className="text-[var(--text-muted)] text-[10px] block font-bold">Original Code Output:</span>
+                  <pre className="text-[var(--text-secondary)] text-[11px] whitespace-pre-wrap max-h-28 overflow-y-auto">
                     {origExecResult ? (origExecResult.stdout || origExecResult.stderr) : "(Run execution to view)"}
                   </pre>
                 </div>
 
-                <div className="bg-[#020617] p-3 rounded-lg border border-[#2DD4BF]/30">
-                  <span className="text-[#2DD4BF] text-[10px] block font-bold">Optimized Code Output:</span>
-                  <pre className="text-[#2DD4BF] text-[11px] whitespace-pre-wrap max-h-28 overflow-y-auto">
+                <div className="bg-[var(--bg-secondary)] p-3 rounded-lg border border-[var(--primary)]/30">
+                  <span className="text-[var(--primary)] text-[10px] block font-bold">Optimized Code Output:</span>
+                  <pre className="text-[var(--primary)] text-[11px] whitespace-pre-wrap max-h-28 overflow-y-auto">
                     {optExecResult ? (optExecResult.stdout || optExecResult.stderr) : "(Run execution to view)"}
                   </pre>
                 </div>
@@ -540,24 +545,24 @@ export default function WorkspacePage() {
 
           {rightTab === "testcases" && (
             <div className="glass-panel p-4 rounded-xl space-y-4 font-mono text-xs min-h-[460px]">
-              <div className="font-bold text-white border-b border-[#3c4a46]/30 pb-2 flex justify-between items-center">
+              <div className="font-bold text-[var(--text-primary)] border-b border-[var(--border)] pb-2 flex justify-between items-center">
                 <span>Test Cases ({testCases.length})</span>
-                <button onClick={handleGenerateAITestCases} disabled={generatingTestCases} className="text-[#2DD4BF] underline">
+                <button onClick={handleGenerateAITestCases} disabled={generatingTestCases} className="text-[var(--primary)] underline">
                   {generatingTestCases ? "Generating..." : "+ AI Test Cases"}
                 </button>
               </div>
 
               <div className="space-y-2 max-h-[360px] overflow-y-auto">
                 {testCases.map((tc, idx) => (
-                  <div key={tc.id} className="bg-[#020617] p-3 rounded-lg border border-[#3c4a46]/30 space-y-1">
+                  <div key={tc.id} className="bg-[var(--bg-secondary)] p-3 rounded-lg border border-[var(--border)] space-y-1">
                     <div className="flex justify-between font-bold">
-                      <span className="text-slate-200">#{idx + 1}: {tc.category}</span>
-                      <span className={tc.status === "PASS" ? "text-emerald-400" : tc.status === "FAIL" ? "text-rose-400" : "text-slate-500"}>
+                      <span className="text-[var(--text-primary)]">#{idx + 1}: {tc.category}</span>
+                      <span className={tc.status === "PASS" ? "text-[#34D399]" : tc.status === "FAIL" ? "text-rose-400" : "text-[var(--text-muted)]"}>
                         {tc.status}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-400">Input: {tc.input.replace(/\n/g, " | ")}</div>
-                    <div className="text-[10px] text-[#2DD4BF]">Expected: {tc.expectedOutput}</div>
+                    <div className="text-[10px] text-[var(--text-secondary)]">Input: {tc.input.replace(/\n/g, " | ")}</div>
+                    <div className="text-[10px] text-[var(--primary)]">Expected: {tc.expectedOutput}</div>
                   </div>
                 ))}
               </div>

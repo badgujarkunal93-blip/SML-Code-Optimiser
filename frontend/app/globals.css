@@ -1,112 +1,119 @@
 @import "tailwindcss";
 
-:root {
-  --background: #020617;
-  --foreground: #dde4e1;
+:root, html.dark {
+  --primary: #2DD4BF;
+  --bg: #07101A;
+  --bg-secondary: #0F172A;
+  --card: #111827;
+  --card-elevated: #182234;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(45, 212, 191, 0.35);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #EF4444;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --dot-color: rgba(45, 212, 191, 0.18);
+}
+
+html.light {
+  --primary: #0D9488;
+  --bg: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --card: #FFFFFF;
+  --card-elevated: #F1F5F9;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-glow: rgba(13, 148, 136, 0.3);
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --success: #10B981;
+  --warning: #D97706;
+  --error: #DC2626;
+  --shadow-color: rgba(0, 0, 0, 0.06);
+  --dot-color: rgba(15, 23, 42, 0.12);
 }
 
 body {
-  background-color: #020617;
-  color: #dde4e1;
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  letter-spacing: -0.01em;
 }
 
 textarea, code, pre {
-  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
 }
 
-/* Glassmorphism & Optima AI Theme Utilities */
+/* 95% Opaque Cards with subtle blur */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(30, 41, 59, 0.8);
+  background: var(--card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px -10px var(--shadow-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.editor-bg {
-  background-color: #020617;
+.glass-panel-elevated {
+  background: var(--card-elevated);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 14px 35px -10px var(--shadow-color);
 }
 
+/* Accent Glowing Tokens */
 .glow-emerald {
-  box-shadow: 0 0 20px rgba(45, 212, 191, 0.2);
+  box-shadow: 0 0 25px rgba(45, 212, 191, 0.25);
 }
 
 .text-emerald-accent {
-  color: #2DD4BF;
+  color: var(--primary);
 }
 
 .bg-emerald-accent {
-  background-color: #2DD4BF;
-  color: #020617;
-}
-
-.border-emerald-glow {
-  border-color: rgba(45, 212, 191, 0.35);
+  background-color: var(--primary);
+  color: #07101A;
 }
 
 .hover-scale {
-  transition: transform 0.2s ease-in-out;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .hover-scale:hover {
   transform: scale(1.02);
 }
 
-/* 3D Perspective Hero Cards */
-.perspective-card-container {
-  perspective: 2000px;
-  transform-style: preserve-3d;
-}
-
-.perspective-card {
-  transform: rotateY(-25deg) rotateX(10deg) translateZ(0);
-  transition: transform 0.5s ease-out;
-  box-shadow: -20px 20px 40px rgba(0, 0, 0, 0.6);
-}
-
-.perspective-card-1 {
-  transform: rotateY(-25deg) rotateX(10deg) translateZ(-100px) translateX(20px);
-  opacity: 0.8;
-}
-
-.perspective-card-2 {
-  transform: rotateY(-25deg) rotateX(10deg) translateZ(0) translateX(0);
-  opacity: 0.9;
-}
-
-.perspective-card-3 {
-  transform: rotateY(-25deg) rotateX(10deg) translateZ(100px) translateX(-20px);
-}
-
-.perspective-card-4 {
-  transform: rotateY(-25deg) rotateX(10deg) translateZ(200px) translateX(-40px);
-}
-
-.perspective-container:hover .perspective-card-1 {
-  transform: rotateY(-20deg) rotateX(5deg) translateZ(-120px) translateX(30px);
-}
-.perspective-container:hover .perspective-card-2 {
-  transform: rotateY(-20deg) rotateX(5deg) translateZ(0) translateX(0);
-}
-.perspective-container:hover .perspective-card-3 {
-  transform: rotateY(-20deg) rotateX(5deg) translateZ(120px) translateX(-30px);
-}
-.perspective-container:hover .perspective-card-4 {
-  transform: rotateY(-20deg) rotateX(5deg) translateZ(240px) translateX(-60px);
-}
-
 /* Custom sleek scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--border);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--text-muted);
+}
+
+/* Seamless 60 FPS Infinite Marquee Keyframes */
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.3333%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 38s linear infinite;
 }

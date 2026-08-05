@@ -2,68 +2,76 @@
 
 import { motion } from "framer-motion";
 
-interface AnimatedConnectionProps {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
+interface DynamicConnectionProps {
+  pX: number;
+  pY: number;
+  cX: number;
+  cY: number;
+  isActive?: boolean;
+  pulse?: boolean;
   delay?: number;
 }
 
-export function AnimatedConnection({ startX, startY, endX, endY, delay = 0 }: AnimatedConnectionProps) {
-  // Cubic Bezier curve calculation
-  const controlY = startY + (endY - startY) * 0.5;
-  const pathD = `M ${startX} ${startY} C ${startX} ${controlY}, ${endX} ${controlY}, ${endX} ${endY}`;
+export function AnimatedConnection({
+  pX,
+  pY,
+  cX,
+  cY,
+  isActive = false,
+  pulse = false,
+  delay = 0,
+}: DynamicConnectionProps) {
+  const midY = pY + (cY - pY) * 0.5;
+  const pathD = `M ${pX} ${pY} V ${midY} H ${cX} V ${cY}`;
+
+  const strokeColor = isActive ? "rgba(45, 212, 191, 0.95)" : "rgba(45, 212, 191, 0.35)";
+  const strokeWidth = isActive ? 2.5 : 2;
+  const glowFilter = isActive
+    ? "drop-shadow(0 0 14px rgba(45, 212, 191, 0.45))"
+    : "drop-shadow(0 0 4px rgba(45, 212, 191, 0.2))";
 
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
-      <defs>
-        <linearGradient id={`grad_${startX}_${endX}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#35F2D0" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#7BE8FF" stopOpacity="0.4" />
-        </linearGradient>
-      </defs>
-
-      {/* Background Subtle Line */}
+    <g style={{ filter: glowFilter }}>
+      {/* Background guide line */}
       <path
         d={pathD}
         fill="none"
-        stroke="rgba(255, 255, 255, 0.08)"
+        stroke="var(--border)"
         strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
 
-      {/* Animated Glowing Connection Line */}
+      {/* Animated Path */}
       <motion.path
         d={pathD}
         fill="none"
-        stroke={`url(#grad_${startX}_${endX})`}
-        strokeWidth="2"
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
         initial={{ pathLength: 0, opacity: 0 }}
-        whileInView={{ pathLength: 1, opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.2, delay, ease: "easeInOut" }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 0.8, delay, ease: "easeInOut" }}
       />
 
-      {/* Traveling Glow Pulse Circle */}
-      <motion.circle
-        r="3"
-        fill="#35F2D0"
-        filter="drop-shadow(0 0 6px #35F2D0)"
-        animate={{
-          offsetDistance: ["0%", "100%"],
-          opacity: [0, 1, 0],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          repeatDelay: 1,
-          ease: "easeInOut",
-          delay: delay + 0.5,
-        }}
-        style={{
-          offsetPath: `path('${pathD}')`,
-        }}
-      />
-    </svg>
+      {/* Traveling Data Particle */}
+      {pulse && (
+        <motion.circle
+          r="3.5"
+          fill="#57f1db"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0] }}
+          transition={{
+            duration: 0.8,
+            ease: "easeInOut",
+            repeat: Infinity,
+            repeatDelay: 7.2,
+          }}
+        >
+          <animateMotion path={pathD} dur="0.8s" repeatCount="indefinite" />
+        </motion.circle>
+      )}
+    </g>
   );
 }

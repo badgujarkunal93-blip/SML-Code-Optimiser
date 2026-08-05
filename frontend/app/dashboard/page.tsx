@@ -32,22 +32,49 @@ export default function DashboardPage() {
       if (!res.ok) {
         throw new Error(`Server returned status ${res.status}`);
       }
-      const data: any = await res.json();
-      const records: HistoryRecord[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.history)
-        ? data.history
-        : [];
-      setHistory(records);
-    } catch (err: any) {
-      setError(err.message || "Failed to load history records");
+      const data: unknown = await res.json();
+      const rawRecords =
+        Array.isArray(data)
+          ? data
+          : typeof data === "object" && data !== null && "history" in data && Array.isArray((data as { history: unknown }).history)
+          ? (data as { history: HistoryRecord[] }).history
+          : [];
+      setHistory(rawRecords as HistoryRecord[]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load history records";
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchHistory();
+    let ignore = false;
+    async function load() {
+      try {
+        const res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/history`);
+        if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+        const data: unknown = await res.json();
+        const rawRecords =
+          Array.isArray(data)
+            ? data
+            : typeof data === "object" && data !== null && "history" in data && Array.isArray((data as { history: unknown }).history)
+            ? (data as { history: HistoryRecord[] }).history
+            : [];
+        if (!ignore) setHistory(rawRecords as HistoryRecord[]);
+      } catch (err: unknown) {
+        if (!ignore) {
+          const message = err instanceof Error ? err.message : "Failed to load history records";
+          setError(message);
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const formatDate = (dateStr?: string) => {
@@ -69,12 +96,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 w-full max-w-[1440px] mx-auto">
       {/* Header */}
-      <div className="glass-panel p-6 rounded-2xl border border-[#3c4a46]/30 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+      <div className="glass-panel p-6 rounded-2xl border border-[var(--border)] flex flex-wrap items-center justify-between gap-4 shadow-2xl">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <span className="text-[#57f1db]">📊</span> Optimization History &amp; Analytics
+          <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+            <span className="text-[var(--primary)]">📊</span> Optimization History &amp; Analytics
           </h1>
-          <p className="text-[#bacac5] text-xs font-mono mt-1">
+          <p className="text-[var(--text-secondary)] text-xs font-mono mt-1">
             Persisted Firestore &amp; Algorand transaction history (latest 50 runs).
           </p>
         </div>
@@ -82,7 +109,7 @@ export default function DashboardPage() {
         <button
           onClick={fetchHistory}
           disabled={loading}
-          className="flex items-center gap-2 bg-[#0F172A] hover:bg-slate-800 text-[#57f1db] font-mono text-xs font-bold px-4 py-2 rounded-xl border border-[#2DD4BF]/30 transition-all hover-scale disabled:opacity-50"
+          className="flex items-center gap-2 bg-[var(--bg-secondary)] hover:bg-[var(--card-elevated)] text-[var(--primary)] font-mono text-xs font-bold px-4 py-2 rounded-xl border border-[var(--primary)]/30 transition-all hover-scale disabled:opacity-50"
         >
           {loading ? "Refreshing..." : "🔄 Refresh History"}
         </button>
@@ -102,10 +129,10 @@ export default function DashboardPage() {
       )}
 
       {/* Table Container */}
-      <div className="glass-panel rounded-2xl border border-[#3c4a46]/30 overflow-hidden shadow-2xl">
+      <div className="glass-panel rounded-2xl border border-[var(--border)] overflow-hidden shadow-2xl">
         {loading ? (
-          <div className="p-12 text-center text-[#bacac5] font-mono flex flex-col items-center justify-center gap-3">
-            <svg className="animate-spin h-6 w-6 text-[#2DD4BF]" viewBox="0 0 24 24" fill="none">
+          <div className="p-12 text-center text-[var(--text-secondary)] font-mono flex flex-col items-center justify-center gap-3">
+            <svg className="animate-spin h-6 w-6 text-[var(--primary)]" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
@@ -113,18 +140,18 @@ export default function DashboardPage() {
           </div>
         ) : history.length === 0 ? (
           <div className="p-12 text-center space-y-3 font-mono">
-            <p className="text-[#bacac5] text-xs">No optimization history found in database.</p>
+            <p className="text-[var(--text-secondary)] text-xs">No optimization history found in database.</p>
             <Link
               href="/"
-              className="inline-block text-xs font-bold text-[#020617] bg-[#2DD4BF] hover:bg-[#57f1db] px-5 py-2 rounded-lg transition-all hover-scale"
+              className="inline-block text-xs font-bold text-[#07101A] bg-[#2DD4BF] hover:bg-[#57f1db] px-5 py-2 rounded-lg transition-all hover-scale"
             >
               Run Your First Optimization →
             </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-[#dde4e1]">
-              <thead className="bg-[#0F172A] text-[#bacac5] font-mono text-[10px] font-bold uppercase tracking-wider border-b border-[#3c4a46]/30">
+            <table className="w-full text-left text-xs text-[var(--text-primary)]">
+              <thead className="bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono text-[10px] font-bold uppercase tracking-wider border-b border-[var(--border)]">
                 <tr>
                   <th className="px-6 py-4">Timestamp</th>
                   <th className="px-6 py-4">Language</th>
@@ -134,21 +161,21 @@ export default function DashboardPage() {
                   <th className="px-6 py-4">Correctness</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#3c4a46]/20 font-mono text-xs">
+              <tbody className="divide-y divide-[var(--border)] font-mono text-xs">
                 {history.map((item, idx) => (
-                  <tr key={item.id || idx} className="hover:bg-[#0F172A]/50 transition-colors">
-                    <td className="px-6 py-4 text-[#bacac5] whitespace-nowrap">
+                  <tr key={item.id || idx} className="hover:bg-[var(--card-elevated)] transition-colors">
+                    <td className="px-6 py-4 text-[var(--text-secondary)] whitespace-nowrap">
                       {formatDate(item.created_at)}
                     </td>
-                    <td className="px-6 py-4 font-bold text-white uppercase">
+                    <td className="px-6 py-4 font-bold text-[var(--text-primary)] uppercase">
                       {item.language}
                     </td>
-                    <td className="px-6 py-4 text-slate-400">
+                    <td className="px-6 py-4 text-[var(--text-muted)]">
                       {item.original_time_ms !== null && item.original_time_ms !== undefined
                         ? `${item.original_time_ms} ms`
                         : "N/A"}
                     </td>
-                    <td className="px-6 py-4 text-[#2DD4BF] font-bold">
+                    <td className="px-6 py-4 text-[var(--primary)] font-bold">
                       {item.optimized_time_ms !== null && item.optimized_time_ms !== undefined
                         ? `${item.optimized_time_ms} ms`
                         : "N/A"}
@@ -156,7 +183,7 @@ export default function DashboardPage() {
                     <td className="px-6 py-4">
                       {item.correctness_verified && item.improvement_pct !== null && item.improvement_pct !== undefined ? (
                         item.improvement_pct >= 0 ? (
-                          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-[#2DD4BF]/10 text-[#2DD4BF] border border-[#2DD4BF]/30">
+                          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30">
                             +{item.improvement_pct}%
                           </span>
                         ) : (

@@ -40,13 +40,14 @@ export class AVMWalletManager {
         return accounts[0]
       }
       throw new Error('No accounts returned from Pera Wallet')
-    } catch (err: any) {
-      if (err?.data?.type === 'CONNECT_MODAL_CLOSED' || err?.message?.includes('closed by user')) {
+    } catch (err: unknown) {
+      const errorObj = err as { data?: { type?: string }; message?: string }
+      if (errorObj?.data?.type === 'CONNECT_MODAL_CLOSED' || errorObj?.message?.includes('closed by user')) {
         console.log('Pera Wallet connection modal was closed by user.')
         throw new Error('Wallet connection was closed.')
       }
-      console.warn('Pera Wallet connection notice:', err?.message || err)
-      throw new Error(err?.message || 'Pera Wallet connection failed')
+      console.warn('Pera Wallet connection notice:', errorObj?.message || err)
+      throw new Error(errorObj?.message || 'Pera Wallet connection failed')
     }
   }
 
@@ -61,7 +62,7 @@ export class AVMWalletManager {
         this.walletAddress = accounts[0]
         return accounts[0]
       }
-    } catch (err) {
+    } catch {
       // Quietly handle session reconnect skip
     }
     return null
@@ -71,7 +72,7 @@ export class AVMWalletManager {
     if (this.peraWallet) {
       try {
         await this.peraWallet.disconnect()
-      } catch (err) {
+      } catch {
         // Quietly ignore disconnect errors
       }
     }
@@ -117,18 +118,18 @@ export class AVMWalletManager {
   }
 
   private async waitForConfirmation(txId: string, timeoutRounds: number = 3): Promise<void> {
-    const status: any = await this.algodClient.status().do()
+    const status = (await this.algodClient.status().do()) as unknown as Record<string, unknown>
     const startRound = Number(status.lastRound || status['last-round'] || 0)
     let currentRound = startRound
     const targetRound = startRound + timeoutRounds
 
     while (currentRound < targetRound) {
       try {
-        const pendingInfo: any = await this.algodClient.pendingTransactionInformation(txId).do()
+        const pendingInfo = (await this.algodClient.pendingTransactionInformation(txId).do()) as unknown as Record<string, unknown>
         if (pendingInfo && (pendingInfo.confirmedRound || pendingInfo['confirmed-round'])) {
           return
         }
-      } catch (e) {
+      } catch {
         // Transaction pending
       }
       await new Promise((res) => setTimeout(res, 1000))
