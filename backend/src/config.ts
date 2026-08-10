@@ -37,6 +37,18 @@ export const CONFIG = {
   },
   PISTON: {
     URL: process.env.PISTON_URL || 'https://emkc.org/api/v2/piston',
+    API_KEY: process.env.PISTON_API_KEY || '',
+    CACHE_TTL_SECONDS: parseInt(process.env.PISTON_RUNTIME_CACHE_TTL_SECONDS || '1800', 10),
+  },
+  SECURITY: {
+    MAX_SOURCE_CODE_BYTES: parseInt(process.env.MAX_SOURCE_CODE_BYTES || '100000', 10), // ~100KB
+    EXECUTION_TIMEOUT_SECONDS: parseInt(process.env.EXECUTION_TIMEOUT_SECONDS || '5', 10),
+    MAX_EXECUTION_OUTPUT_BYTES: parseInt(process.env.MAX_EXECUTION_OUTPUT_BYTES || '1048576', 10), // 1MB
+    RATE_LIMIT_PER_MINUTE: parseInt(process.env.RATE_LIMIT_PER_MINUTE || '15', 10),
+  },
+  BENCHMARK: {
+    WARMUP_RUNS: parseInt(process.env.BENCHMARK_WARMUP_RUNS || '2', 10),
+    MEASUREMENT_RUNS: parseInt(process.env.BENCHMARK_MEASUREMENT_RUNS || '5', 10),
   },
   FIREBASE: {
     PROJECT_ID: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',

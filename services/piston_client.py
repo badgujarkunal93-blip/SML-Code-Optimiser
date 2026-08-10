@@ -1,25 +1,30 @@
 """
 Piston Execution Client Service.
-Executes code snippets using the Piston API with real local execution fallbacks.
+Executes code snippets using the Piston API in isolated sandboxes.
+SECURITY MANDATE: Local Python process execution fallback is STRICTLY REMOVED.
 """
 
 import asyncio
-import json
 import logging
-import subprocess
-import sys
 import time
-import traceback
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 import httpx
 
-from config import PISTON_URL, PISTON_API_KEY
+from config import (
+    PISTON_URL,
+    PISTON_API_KEY,
+    EXECUTION_TIMEOUT_SECONDS,
+    MAX_EXECUTION_OUTPUT_BYTES,
+    MAX_SOURCE_CODE_BYTES,
+    PISTON_RUNTIME_CACHE_TTL_SECONDS,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global cache for runtime language & version mappings
+# Global cache for runtime language & version mappings with TTL
 _RUNTIMES_CACHE: Dict[str, Tuple[str, str]] = {}
+_RUNTIMES_CACHE_TIMESTAMP: float = 0.0
 
 LANGUAGE_ALIASES = {
     "py": "python",
@@ -31,11 +36,18 @@ LANGUAGE_ALIASES = {
     "rb": "ruby",
     "rs": "rust",
     "go": "go",
+    "c": "c",
+    "java": "java",
+    "php": "php",
+}
+
+SUPPORTED_LANGUAGES_SET = {
+    "python", "javascript", "typescript", "c++", "c", "java",
+    "rust", "go", "csharp", "ruby", "php"
 }
 
 
 def _get_headers() -> Dict[str, str]:
-    """Returns headers for Piston API calls, incorporating PISTON_API_KEY if configured."""
     headers = {"Content-Type": "application/json"}
     if PISTON_API_KEY:
         headers["Authorization"] = PISTON_API_KEY
@@ -44,19 +56,20 @@ def _get_headers() -> Dict[str, str]:
 
 async def _fetch_and_cache_runtimes() -> Dict[str, Tuple[str, str]]:
     """
-    Fetches available runtimes from Piston API and caches the latest version for each language and alias.
+    Fetches available runtimes from Piston API with TTL expiration.
     """
-    global _RUNTIMES_CACHE
-    if _RUNTIMES_CACHE:
+    global _RUNTIMES_CACHE, _RUNTIMES_CACHE_TIMESTAMP
+    now = time.time()
+
+    if _RUNTIMES_CACHE and (now - _RUNTIMES_CACHE_TIMESTAMP < PISTON_RUNTIME_CACHE_TTL_SECONDS):
         return _RUNTIMES_CACHE
 
     runtimes_url = f"{PISTON_URL}/runtimes"
-    logger.info(f"[Piston API] Fetching available runtimes from {runtimes_url}...")
+    logger.info(f"[Piston API] Fetching runtimes from {runtimes_url}...")
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=4.0) as client:
             response = await client.get(runtimes_url, headers=_get_headers())
-            logger.info(f"[Piston API GET /runtimes] Status={response.status_code} | BodySnippet={response.text[:200]}")
             if response.status_code == 200:
                 runtimes: List[Dict[str, Any]] = response.json()
                 cache: Dict[str, Tuple[str, str]] = {}
@@ -70,12 +83,13 @@ async def _fetch_and_cache_runtimes() -> Dict[str, Tuple[str, str]]:
                             cache[k] = (lang, ver)
 
                 _RUNTIMES_CACHE = cache
-                logger.info(f"[Piston API] Successfully cached {len(_RUNTIMES_CACHE)} language runtime keys.")
+                _RUNTIMES_CACHE_TIMESTAMP = now
+                logger.info(f"[Piston API] Successfully cached {len(_RUNTIMES_CACHE)} runtime keys.")
                 return _RUNTIMES_CACHE
     except Exception as exc:
-        logger.exception(f"[Piston API Runtimes Exception] Failed to fetch runtimes from API: {exc}")
+        logger.warning(f"[Piston API Runtimes] Failed to fetch runtimes from API: {exc}")
 
-    # Default fallback runtime versions matching Piston standard
+    # Default fallback mapping
     _RUNTIMES_CACHE = {
         "python": ("python", "3.10.0"),
         "py": ("python", "3.10.0"),
@@ -83,16 +97,28 @@ async def _fetch_and_cache_runtimes() -> Dict[str, Tuple[str, str]]:
         "js": ("javascript", "18.15.0"),
         "typescript": ("typescript", "5.0.3"),
         "ts": ("typescript", "5.0.3"),
+        "c++": ("c++", "10.2.0"),
+        "cpp": ("c++", "10.2.0"),
+        "c": ("c", "10.2.0"),
+        "java": ("java", "15.0.2"),
+        "rust": ("rust", "1.68.2"),
+        "rs": ("rust", "1.68.2"),
+        "go": ("go", "1.16.2"),
     }
+    _RUNTIMES_CACHE_TIMESTAMP = now
     return _RUNTIMES_CACHE
 
 
-async def resolve_language_and_version(requested_language: str) -> Tuple[str, str]:
+async def resolve_language_and_version(requested_language: str) -> Optional[Tuple[str, str]]:
     """
-    Resolves requested language string to canonical Piston language name and latest version.
+    Resolves requested language string to canonical Piston language name and version.
+    Returns None if unsupported.
     """
     clean_lang = requested_language.strip().lower()
     clean_lang = LANGUAGE_ALIASES.get(clean_lang, clean_lang)
+
+    if clean_lang not in SUPPORTED_LANGUAGES_SET:
+        return None
 
     runtimes = await _fetch_and_cache_runtimes()
 
@@ -103,87 +129,55 @@ async def resolve_language_and_version(requested_language: str) -> Tuple[str, st
         if key.startswith(clean_lang) or clean_lang.startswith(key):
             return canonical_lang, version
 
-    return clean_lang, "*"
+    return None
 
 
-def _exec_python_sync(code: str) -> Dict[str, Any]:
-    """
-    Synchronous subprocess runner using Popen via stdin.
-    Avoids Windows asyncio SelectorEventLoop NotImplementedError.
-    """
-    logger.info(
-        f"\n==================== LOCAL EXECUTION PAYLOAD ====================\n"
-        f"Runner: sys.executable ({sys.executable})\n"
-        f"Code Length: {len(code)} chars\n"
-        f"Code:\n{code}\n"
-        f"================================================================"
-    )
-    start_time = time.perf_counter()
-    try:
-        proc = subprocess.Popen(
-            [sys.executable, "-"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout_str, stderr_str = proc.communicate(input=code, timeout=10.0)
-        wall_time_ms = (time.perf_counter() - start_time) * 1000.0
-        exit_code = proc.returncode
-
-        logger.info(f"[Local Execution Result] ExitCode={exit_code} | Duration={wall_time_ms:.2f}ms")
-        if stdout_str:
-            logger.info(f"[Local Execution STDOUT]:\n{stdout_str.strip()}")
-        if stderr_str:
-            logger.warning(f"[Local Execution STDERR]:\n{stderr_str.strip()}")
-
-        return {
-            "stdout": stdout_str,
-            "stderr": stderr_str,
-            "exit_code": exit_code,
-            "time_ms": round(wall_time_ms, 2),
-            "piston_time_ms": round(wall_time_ms, 2),
-            "timed_out": False,
-        }
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        stdout_str, stderr_str = proc.communicate()
-        wall_time_ms = (time.perf_counter() - start_time) * 1000.0
-        logger.warning(f"[Local Execution TIMEOUT] Process timed out after {wall_time_ms:.2f} ms")
-        return {
-            "stdout": "",
-            "stderr": "Local execution timed out after 10 seconds",
-            "exit_code": -1,
-            "time_ms": round(wall_time_ms, 2),
-            "piston_time_ms": 0.0,
-            "timed_out": True,
-        }
-    except Exception as exc:
-        wall_time_ms = (time.perf_counter() - start_time) * 1000.0
-        tb_str = traceback.format_exc()
-        logger.error(f"[Local Execution EXCEPTION] {type(exc).__name__}: {exc}\n{tb_str}")
-        return {
-            "stdout": "",
-            "stderr": f"Local execution error ({type(exc).__name__}): {exc}",
-            "exit_code": -1,
-            "time_ms": round(wall_time_ms, 2),
-            "piston_time_ms": 0.0,
-            "timed_out": False,
-        }
-
-
-async def _run_python_locally(code: str, stdin: str = "") -> Dict[str, Any]:
-    """
-    Executes Python code locally via stdin in a thread pool to support all Windows asyncio loops seamlessly.
-    """
-    return await asyncio.to_thread(_exec_python_sync, code)
+def _truncate_text(text: str, max_bytes: int) -> Tuple[str, bool]:
+    encoded = text.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return text, False
+    truncated_str = encoded[:max_bytes].decode("utf-8", errors="ignore")
+    return f"{truncated_str}\n...[OUTPUT TRUNCATED EXCEEDED {max_bytes} BYTES]", True
 
 
 async def run_code(code: str, language: str, stdin: str = "") -> Dict[str, Any]:
     """
-    Executes code snippet via Piston API with wall-clock timing, detailed payload logging, and full exception tracebacks.
+    Executes code snippet via isolated Piston API sandbox.
+    CRITICAL SECURITY GUARANTEE: NEVER executes user-submitted code locally.
     """
-    canonical_lang, version = await resolve_language_and_version(language)
+    start_time = time.perf_counter()
+
+    # Validate source code size
+    code_bytes = len(code.encode("utf-8"))
+    if code_bytes > MAX_SOURCE_CODE_BYTES:
+        return {
+            "success": False,
+            "stdout": "",
+            "stderr": f"Source code payload size ({code_bytes} bytes) exceeds limit ({MAX_SOURCE_CODE_BYTES} bytes).",
+            "exit_code": -1,
+            "time_ms": 0.0,
+            "piston_time_ms": 0.0,
+            "timed_out": False,
+            "error_code": "SOURCE_CODE_TOO_LARGE",
+            "message": "Payload Too Large",
+        }
+
+    resolved = await resolve_language_and_version(language)
+    if not resolved:
+        supported_str = ", ".join(sorted(list(SUPPORTED_LANGUAGES_SET)))
+        return {
+            "success": False,
+            "stdout": "",
+            "stderr": f"Unsupported language: '{language}'. Supported languages: {supported_str}",
+            "exit_code": -1,
+            "time_ms": 0.0,
+            "piston_time_ms": 0.0,
+            "timed_out": False,
+            "error_code": "UNSUPPORTED_LANGUAGE",
+            "message": f"Unsupported language: '{language}'",
+        }
+
+    canonical_lang, version = resolved
     execute_url = f"{PISTON_URL}/execute"
 
     payload = {
@@ -193,99 +187,81 @@ async def run_code(code: str, language: str, stdin: str = "") -> Dict[str, Any]:
         "stdin": stdin,
     }
 
+    # Safe Metadata Logging (NEVER log user source code in production logs)
     logger.info(
-        f"\n==================== PISTON REQUEST PAYLOAD ====================\n"
-        f"URL: {execute_url}\n"
-        f"Language: {canonical_lang}\n"
-        f"Version: {version}\n"
-        f"Code:\n{code}\n"
-        f"================================================================"
+        f"[Piston Client Request] Lang={canonical_lang} | Version={version} | CodeBytes={code_bytes} | StdinBytes={len(stdin)}"
     )
 
-    start_time = time.perf_counter()
-
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=EXECUTION_TIMEOUT_SECONDS) as client:
             response = await client.post(execute_url, json=payload, headers=_get_headers())
             wall_time_ms = (time.perf_counter() - start_time) * 1000.0
 
-            logger.info(
-                f"\n==================== PISTON RAW RESPONSE ====================\n"
-                f"Status Code: {response.status_code}\n"
-                f"Headers: {dict(response.headers)}\n"
-                f"Body:\n{response.text}\n"
-                f"=============================================================="
-            )
-
-            # Handle 401 Unauthorized (Piston public API whitelist restriction)
-            if response.status_code == 401:
-                if canonical_lang == "python":
-                    logger.info("[Piston API 401] Public Piston API whitelist restricted. Triggering local Python runner...")
-                    return await _run_python_locally(code, stdin)
-                else:
-                    return {
-                        "stdout": "",
-                        "stderr": f"Piston API HTTP 401 Unauthorized: {response.text}",
-                        "exit_code": -1,
-                        "time_ms": round(wall_time_ms, 2),
-                        "piston_time_ms": 0.0,
-                        "timed_out": False,
-                    }
-
             if response.status_code != 200:
+                logger.warning(f"[Piston Client Response] HTTP {response.status_code}")
                 return {
+                    "success": False,
                     "stdout": "",
-                    "stderr": f"Piston API HTTP error {response.status_code}: {response.text}",
+                    "stderr": "Secure code execution service is temporarily unavailable.",
                     "exit_code": -1,
                     "time_ms": round(wall_time_ms, 2),
                     "piston_time_ms": 0.0,
                     "timed_out": False,
+                    "error_code": "EXECUTION_SERVICE_UNAVAILABLE",
+                    "message": "Secure code execution is temporarily unavailable.",
                 }
 
             data = response.json()
             run_result = data.get("run", {})
 
-            stdout = str(run_result.get("stdout", ""))
-            stderr = str(run_result.get("stderr", ""))
+            raw_stdout = str(run_result.get("stdout", "")).rstrip()
+            raw_stderr = str(run_result.get("stderr", "")).rstrip()
             exit_code = int(run_result.get("code", 0) if run_result.get("code") is not None else -1)
 
             piston_time_sec = run_result.get("time")
             piston_time_ms = float(piston_time_sec) * 1000.0 if piston_time_sec is not None else wall_time_ms
 
+            stdout, stdout_truncated = _truncate_text(raw_stdout, MAX_EXECUTION_OUTPUT_BYTES)
+            stderr, stderr_truncated = _truncate_text(raw_stderr, MAX_EXECUTION_OUTPUT_BYTES)
+
             return {
+                "success": exit_code == 0,
                 "stdout": stdout,
                 "stderr": stderr,
                 "exit_code": exit_code,
                 "time_ms": round(wall_time_ms, 2),
                 "piston_time_ms": round(piston_time_ms, 2),
                 "timed_out": False,
+                "stdout_truncated": stdout_truncated,
+                "stderr_truncated": stderr_truncated,
             }
 
-    except (httpx.TimeoutException, httpx.ReadTimeout) as exc:
+    except (httpx.TimeoutException, httpx.ReadTimeout):
         wall_time_ms = (time.perf_counter() - start_time) * 1000.0
-        logger.warning(f"[Piston API Timeout] Request timed out after {wall_time_ms:.2f} ms: {exc}")
+        logger.warning(f"[Piston Client Timeout] Execution exceeded limit of {EXECUTION_TIMEOUT_SECONDS}s.")
         return {
+            "success": False,
             "stdout": "",
-            "stderr": "Execution timed out after 10 seconds",
+            "stderr": f"Execution exceeded the allowed time limit of {EXECUTION_TIMEOUT_SECONDS}s.",
             "exit_code": -1,
             "time_ms": round(wall_time_ms, 2),
             "piston_time_ms": 0.0,
             "timed_out": True,
+            "error_code": "TIMEOUT",
+            "message": "Execution exceeded the allowed time limit.",
         }
+
     except Exception as exc:
-        tb_str = traceback.format_exc()
-        logger.error(f"[Piston API Exception] {type(exc).__name__}: {exc}\n{tb_str}")
-
-        if canonical_lang == "python":
-            logger.info("[Piston API Exception] Triggering local Python runner fallback...")
-            return await _run_python_locally(code, stdin)
-
         wall_time_ms = (time.perf_counter() - start_time) * 1000.0
+        logger.error(f"[Piston Client Exception] {type(exc).__name__}: {exc}")
         return {
+            "success": False,
             "stdout": "",
-            "stderr": f"Execution error ({type(exc).__name__}): {exc}",
+            "stderr": "Secure code execution is temporarily unavailable.",
             "exit_code": -1,
             "time_ms": round(wall_time_ms, 2),
             "piston_time_ms": 0.0,
             "timed_out": False,
+            "error_code": "EXECUTION_SERVICE_UNAVAILABLE",
+            "message": "Secure code execution is temporarily unavailable.",
         }
