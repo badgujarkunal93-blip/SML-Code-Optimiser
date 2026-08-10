@@ -98,7 +98,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-xs sm:text-sm lg:text-base text-[var(--text-secondary)] leading-[1.7] max-w-[560px]">
-                Enterprise AI code optimization platform powered by Algorand x402 protocol, Groq LLM AST reduction, and Piston execution benchmarking.
+                AI-powered code optimization that analyzes your codebase, eliminates bottlenecks, and validates real performance gains through automated execution and benchmarking.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 lg:gap-[20px] pt-2 lg:pt-3">
