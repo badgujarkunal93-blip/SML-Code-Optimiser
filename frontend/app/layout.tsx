@@ -8,6 +8,11 @@ import { ThemeToggle } from "@/app/components/ThemeToggle";
 export const metadata: Metadata = {
   title: "Optima AI — Autonomous Code Optimization Platform",
   description: "Enterprise AI code optimization, wall-clock benchmarking, multi-compiler execution, and Algorand x402 settlement protocol.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -18,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -29,7 +35,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[var(--bg)] text-[var(--text-primary)] antialiased min-h-screen flex flex-col selection:bg-[#2DD4BF]/30 selection:text-[#2DD4BF] relative overflow-x-hidden transition-colors duration-300">
+      <body className="bg-[var(--bg)] text-[var(--text-primary)] font-sans antialiased selection:bg-[var(--primary)] selection:text-black min-h-screen flex flex-col">
         <ThemeProvider>
           {/* Interactive Dot Grid Background Canvas */}
           <InteractiveDotGrid />
@@ -38,10 +44,13 @@ export default function RootLayout({
           <nav className="bg-[var(--bg)]/90 backdrop-blur-xl sticky top-0 z-50 border-b border-[var(--border)] shadow-sm">
             <div className="flex justify-between items-center px-4 sm:px-8 py-3.5 max-w-[1440px] mx-auto w-full">
               <Link href="/" className="flex items-center gap-3 group">
-                <span className="text-xl font-black tracking-tighter text-[var(--text-primary)] flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 border border-[var(--primary)]/30 flex items-center justify-center text-[var(--primary)] text-lg shadow-md group-hover:scale-105 transition-transform">
-                    ⚡
-                  </span>
+                <span className="text-xl font-black tracking-tighter text-[var(--text-primary)] flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--card)] border border-[var(--border)] shadow-md flex items-center justify-center group-hover:scale-105 transition-transform group-hover:border-[var(--primary)]/60">
+                    <svg viewBox="0 0 32 32" className="w-5 h-5 fill-none">
+                      <path d="M7 10L13 16L7 22" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="16" y1="22" x2="24" y2="22" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </div>
                   Optima AI
                 </span>
               </Link>
