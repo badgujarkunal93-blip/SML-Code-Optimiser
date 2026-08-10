@@ -309,38 +309,41 @@ export default function WorkspacePage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap shrink-0">
           {isDevBypass ? (
-            <span className="text-[10px] text-sky-400 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/30">
+            <span className="h-[40px] px-4 rounded-xl text-[10px] text-sky-400 bg-sky-500/10 border border-sky-500/30 font-semibold font-mono flex items-center justify-center whitespace-nowrap">
               Dev Mode Bypass ✓
             </span>
           ) : walletAddress ? (
-            <span className="text-[10px] text-[var(--primary)] bg-[var(--primary)]/10 px-3 py-1 rounded-full border border-[var(--primary)]/30 font-semibold">
+            <span className="h-[40px] px-4 rounded-xl text-[10px] text-[var(--primary)] bg-[var(--primary)]/10 border border-[var(--primary)]/30 font-semibold font-mono flex items-center justify-center whitespace-nowrap">
               Pera: {walletAddress.slice(0, 6)}...
             </span>
           ) : (
             <button
               onClick={handleConnectWallet}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-full font-bold text-xs shadow"
+              className="h-[40px] px-4 sm:px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold font-mono text-xs shadow-md shadow-indigo-600/20 transition-all hover-scale flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              Connect Wallet
+              <span className="material-symbols-outlined text-base leading-none">account_balance_wallet</span>
+              <span>Connect Wallet</span>
             </button>
           )}
 
           <button
             onClick={handleRunAndVerifyAll}
             disabled={executing}
-            className="bg-[var(--bg-secondary)] hover:bg-[var(--card-elevated)] text-[var(--primary)] border border-[var(--primary)]/30 font-bold px-4 py-1.5 rounded-lg transition-colors"
+            className="h-[40px] px-4 sm:px-5 rounded-xl bg-[var(--card-elevated)] hover:bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]/30 font-bold font-mono text-xs shadow-sm transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
           >
-            {executing ? "Executing..." : "⚡ Run & Verify"}
+            <span className="material-symbols-outlined text-base leading-none">bolt</span>
+            <span>{executing ? "Executing..." : "Run & Verify"}</span>
           </button>
 
           <button
             onClick={handleOptimize}
             disabled={loading || !code.trim()}
-            className="bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-bold px-5 py-1.5 rounded-lg shadow-md transition-all hover-scale"
+            className="h-[40px] px-5 sm:px-6 rounded-xl bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-extrabold font-mono text-xs shadow-md shadow-[#2DD4BF]/20 transition-all hover-scale flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
           >
-            {loading ? "Optimizing..." : "⚡ Optimize Code"}
+            <span className="material-symbols-outlined text-base leading-none">auto_awesome</span>
+            <span>{loading ? "Optimizing..." : "Optimize Code"}</span>
           </button>
         </div>
       </div>

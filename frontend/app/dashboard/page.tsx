@@ -37,8 +37,8 @@ export default function DashboardPage() {
         Array.isArray(data)
           ? data
           : typeof data === "object" && data !== null && "history" in data && Array.isArray((data as { history: unknown }).history)
-          ? (data as { history: HistoryRecord[] }).history
-          : [];
+            ? (data as { history: HistoryRecord[] }).history
+            : [];
       setHistory(rawRecords as HistoryRecord[]);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load history records";
@@ -59,8 +59,8 @@ export default function DashboardPage() {
           Array.isArray(data)
             ? data
             : typeof data === "object" && data !== null && "history" in data && Array.isArray((data as { history: unknown }).history)
-            ? (data as { history: HistoryRecord[] }).history
-            : [];
+              ? (data as { history: HistoryRecord[] }).history
+              : [];
         if (!ignore) setHistory(rawRecords as HistoryRecord[]);
       } catch (err: unknown) {
         if (!ignore) {

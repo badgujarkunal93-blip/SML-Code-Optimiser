@@ -76,57 +76,61 @@ export default function LandingPage() {
   const [isHeroHovered, setIsHeroHovered] = useState(false);
 
   return (
-    <div className="max-w-[1400px] px-6 sm:px-12 md:px-16 mx-auto w-full space-y-32 py-6 relative z-10">
-      {/* 🚀 HERO SECTION (82vh Height 12-Column Responsive Grid) */}
-      <section className="relative min-h-[82vh] flex items-center py-6">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* Left Text Column (45%) */}
-          <div className="lg:col-span-5 space-y-6 relative z-20 max-w-[620px]">
-            <h1
-              className={`font-[800] text-4xl sm:text-6xl md:text-7xl lg:text-[82px] xl:text-[92px] leading-[0.92] tracking-[-0.04em] transition-all duration-500 ${
-                isHeroHovered
-                  ? "drop-shadow-[0_0_35px_rgba(45,212,191,0.45)]"
-                  : "drop-shadow-none"
-              }`}
-            >
-              <span className="text-white block">Optimize Code.</span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#2DD4BF] to-[#57f1db] block">
-                Not Just Syntax.
-              </span>
-            </h1>
-
-            <p className="text-sm sm:text-base text-white/85 leading-[1.75] max-w-[560px]">
-              Enterprise AI code optimization platform powered by Algorand x402 protocol, Groq LLM AST reduction, and Piston execution benchmarking.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-[20px] pt-4">
-              <Link
-                href="/workspace"
-                className="h-[60px] px-8 rounded-[18px] bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-mono font-extrabold text-sm shadow-lg shadow-[#2DD4BF]/25 transition-all hover-scale flex items-center justify-center gap-2.5"
+    <div className="max-w-[1400px] px-6 sm:px-12 md:px-16 mx-auto w-full space-y-16 lg:space-y-24 py-0 relative z-10">
+      {/* 🚀 HERO SECTION + STATUS STRIP (Composed Initial 100svh Viewport Screen) */}
+      <div className="flex flex-col justify-between min-h-[calc(100svh-70px)] lg:h-[calc(100svh-70px)] lg:max-h-[calc(100svh-70px)] overflow-hidden py-1">
+        <section className="relative flex-1 flex items-center justify-center py-2 lg:py-0 overflow-hidden">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            
+            {/* Left Text Column (45%) */}
+            <div className="lg:col-span-5 space-y-4 lg:space-y-5 relative z-20 max-w-[620px]">
+              <h1
+                className={`font-[800] text-4xl sm:text-5xl md:text-6xl lg:text-[66px] xl:text-[76px] leading-[0.93] tracking-[-0.04em] transition-all duration-500 ${
+                  isHeroHovered
+                    ? "drop-shadow-[0_0_35px_rgba(45,212,191,0.45)]"
+                    : "drop-shadow-none"
+                }`}
               >
-                <span>Launch Workspace IDE</span>
-                <span className="material-symbols-outlined text-lg">east</span>
-              </Link>
+                <span className="text-white block">Optimize Code.</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#2DD4BF] to-[#57f1db] block">
+                  Not Just Syntax.
+                </span>
+              </h1>
 
-              <a
-                href="#workflow"
-                className="h-[60px] px-8 rounded-[18px] bg-[var(--card)] hover:bg-[var(--card-elevated)] text-white/90 hover:text-white font-mono text-xs font-semibold border border-[var(--border)] transition-colors flex items-center justify-center gap-2"
-              >
-                <span>Learn Workflow</span>
-              </a>
+              <p className="text-xs sm:text-sm lg:text-base text-white/85 leading-[1.7] max-w-[560px]">
+                Enterprise AI code optimization platform powered by Algorand x402 protocol, Groq LLM AST reduction, and Piston execution benchmarking.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4 lg:gap-[20px] pt-2 lg:pt-3">
+                <Link
+                  href="/workspace"
+                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-mono font-extrabold text-xs sm:text-sm shadow-lg shadow-[#2DD4BF]/25 transition-all hover-scale flex items-center justify-center gap-2.5"
+                >
+                  <span>Launch Workspace IDE</span>
+                  <span className="material-symbols-outlined text-lg">east</span>
+                </Link>
+
+                <a
+                  href="#workflow"
+                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[var(--card)] hover:bg-[var(--card-elevated)] text-white/90 hover:text-white font-mono text-xs font-semibold border border-[var(--border)] transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>Learn Workflow</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Right macOS Parallel Finder Window Stack (55%) */}
+            <div className="lg:col-span-7 flex justify-center items-center h-full">
+              <Hero3DTerminal onHoverChange={setIsHeroHovered} />
             </div>
           </div>
+        </section>
 
-          {/* Right macOS Parallel Finder Window Stack (55%) */}
-          <div className="lg:col-span-7 flex justify-center items-center">
-            <Hero3DTerminal onHoverChange={setIsHeroHovered} />
-          </div>
+        {/* 🔴 LIVE INFINITE METRICS MARQUEE (100vw EDGE-TO-EDGE STATUS STRIP) */}
+        <div className="shrink-0 pt-1 pb-1">
+          <LiveMetricsMarquee />
         </div>
-      </section>
-
-      {/* 🔴 LIVE INFINITE METRICS MARQUEE (100vw EDGE-TO-EDGE) */}
-      <LiveMetricsMarquee />
+      </div>
 
       {/* 📊 DEVELOPER METRICS STRIP */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
