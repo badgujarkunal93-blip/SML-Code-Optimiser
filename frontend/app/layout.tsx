@@ -35,7 +35,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[var(--bg)] text-[var(--text-primary)] font-sans antialiased selection:bg-[var(--primary)] selection:text-black min-h-screen flex flex-col">
+      <body
+        suppressHydrationWarning
+        className="bg-[var(--bg)] text-[var(--text-primary)] font-sans antialiased selection:bg-[var(--primary)] selection:text-black min-h-screen flex flex-col"
+      >
         <ThemeProvider>
           {/* Interactive Dot Grid Background Canvas */}
           <InteractiveDotGrid />
