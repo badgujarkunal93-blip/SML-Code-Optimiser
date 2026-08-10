@@ -81,7 +81,7 @@ export function LiveMetricsMarquee() {
   return (
     <div className="relative w-screen left-1/2 -translate-x-1/2 overflow-hidden my-4 z-30 select-none">
       {/* Container Strip */}
-      <div className="w-full h-[52px] sm:h-[60px] md:h-[72px] bg-gradient-to-r from-[#081018] via-[#0D1520] to-[#101827] border-t border-[rgba(45,212,191,0.15)] border-b border-[rgba(45,212,191,0.08)] backdrop-blur-md flex items-center relative group [mask-image:linear-gradient(to_right,transparent_0%,#000_8%,#000_92%,transparent_100%)]">
+      <div className="w-full h-[52px] sm:h-[60px] md:h-[72px] bg-[var(--card-elevated)] border-y border-[var(--border)] backdrop-blur-md flex items-center relative group [mask-image:linear-gradient(to_right,transparent_0%,#000_8%,#000_92%,transparent_100%)]">
         
         {/* Scrolling Track */}
         <div className="flex items-center whitespace-nowrap animate-marquee group-hover:[animation-play-state:paused] transform-gpu will-change-transform">

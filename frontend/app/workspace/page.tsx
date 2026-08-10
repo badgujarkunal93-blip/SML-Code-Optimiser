@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { x402Client, OptimizationResponse, TestCaseItem } from "@/lib/x402/fetch";
 import { PaymentDetails } from "@/lib/x402/avm";
 import { detectLanguage } from "@/lib/languageDetector";
+import { formatSourceCode } from "@/lib/prettierFormatter";
 
 const LANGUAGES = [
   { id: "python", name: "Python 3", ext: "py" },
@@ -379,7 +380,17 @@ export default function WorkspacePage() {
         <div className="flex-1 flex flex-col w-full glass-panel rounded-2xl overflow-hidden border border-[var(--border)] shadow-2xl">
           <div className="bg-[var(--bg-secondary)] p-3 border-b border-[var(--border)] flex justify-between items-center font-mono text-xs text-[var(--text-secondary)]">
             <span className="font-bold text-[var(--text-primary)]">Source Code Workspace</span>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  const formatted = await formatSourceCode(code, activeInputLang);
+                  setCode(formatted);
+                }}
+                className="px-2.5 py-1 rounded text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] font-bold border border-[var(--primary)]/30 hover:bg-[var(--primary)]/20 transition-all flex items-center gap-1"
+                title="Format code using Prettier"
+              >
+                <span>⚡ Prettier Format</span>
+              </button>
               <button
                 onClick={() => setViewMode("split")}
                 className={`px-2.5 py-1 rounded text-[10px] ${viewMode === "split" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}

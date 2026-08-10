@@ -268,8 +268,8 @@ export function Hero3DTerminal({ onHoverChange }: Hero3DTerminalProps) {
           onMouseLeave={handleMouseLeave}
           className={`relative z-10 w-full h-full rounded-2xl overflow-hidden bg-[var(--card)] transition-all duration-300 transform-gpu flex flex-col justify-between ${
             isHovered
-              ? "border border-[#2DD4BF] shadow-[0_16px_60px_rgba(0,0,0,0.55),0_0_45px_rgba(45,212,191,0.18)] scale-[1.01]"
-              : "border border-[#2DD4BF]/60 shadow-[0_12px_50px_rgba(0,0,0,0.45),0_0_40px_rgba(45,212,191,0.08)] scale-100"
+              ? "border border-[var(--primary)] shadow-[0_16px_60px_var(--shadow-color),0_0_45px_var(--border-glow)] scale-[1.01]"
+              : "border border-[var(--terminal-border)] shadow-[0_12px_50px_var(--shadow-color)] scale-100"
           }`}
         >
           {/* HEADER (STATIC - READS CURRENT SLIDE METADATA - NEVER REMOUNTS) */}

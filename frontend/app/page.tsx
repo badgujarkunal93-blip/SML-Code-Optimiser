@@ -91,20 +91,20 @@ export default function LandingPage() {
                     : "drop-shadow-none"
                 }`}
               >
-                <span className="text-white block">Optimize Code.</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#2DD4BF] to-[#57f1db] block">
+                <span className="text-[var(--hero-title-primary)] block">Optimize Code.</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--hero-title-accent-from)] to-[var(--hero-title-accent-to)] block">
                   Not Just Syntax.
                 </span>
               </h1>
 
-              <p className="text-xs sm:text-sm lg:text-base text-white/85 leading-[1.7] max-w-[560px]">
+              <p className="text-xs sm:text-sm lg:text-base text-[var(--text-secondary)] leading-[1.7] max-w-[560px]">
                 Enterprise AI code optimization platform powered by Algorand x402 protocol, Groq LLM AST reduction, and Piston execution benchmarking.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 lg:gap-[20px] pt-2 lg:pt-3">
                 <Link
                   href="/workspace"
-                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-mono font-extrabold text-xs sm:text-sm shadow-lg shadow-[#2DD4BF]/25 transition-all hover-scale flex items-center justify-center gap-2.5"
+                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[var(--primary)] hover:opacity-90 text-[#07101A] font-mono font-extrabold text-xs sm:text-sm shadow-lg shadow-[var(--primary)]/25 transition-all hover-scale flex items-center justify-center gap-2.5"
                 >
                   <span>Launch Workspace IDE</span>
                   <span className="material-symbols-outlined text-lg">east</span>
@@ -112,7 +112,7 @@ export default function LandingPage() {
 
                 <a
                   href="#workflow"
-                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[var(--card)] hover:bg-[var(--card-elevated)] text-white/90 hover:text-white font-mono text-xs font-semibold border border-[var(--border)] transition-colors flex items-center justify-center gap-2"
+                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[var(--card)] hover:bg-[var(--card-elevated)] text-[var(--text-primary)] font-mono text-xs font-semibold border border-[var(--border)] transition-colors flex items-center justify-center gap-2"
                 >
                   <span>Learn Workflow</span>
                 </a>
