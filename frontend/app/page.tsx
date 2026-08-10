@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Hero3DTerminal } from "@/app/components/Hero3DTerminal";
 import { LiveMetricsMarquee } from "@/app/components/LiveMetricsMarquee";
 import { ArchitectureSection } from "@/app/components/compiler-tree/ArchitectureSection";
+import { WorkflowSection } from "@/app/components/WorkflowSection";
 
 const WORKFLOW_STEPS = [
   { id: "01", name: "Input Code", icon: "code", desc: "Paste source code in any supported programming language" },
@@ -197,6 +198,9 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* 🛠 HOW OPTIMA AI WORKS SECTION */}
+      <WorkflowSection />
 
       {/* ⚡ FEATURE SECTION */}
       <section className="space-y-8 pt-4">

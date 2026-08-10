@@ -17,6 +17,7 @@
 
 - 🧠 **Groq Llama-3.3 70B AST Reduction**: Automatically refactors algorithmic bottlenecks (e.g. $O(n^2)$ Bubble Sort to $O(n \log n)$ Timsort/QuickSort), performs dead-code elimination, prunes heap allocations, and vectorizes loops.
 - 🧪 **Piston Execution Sandbox**: Executes original vs. optimized code in real-time sandboxes to measure wall-clock latency, peak RSS memory consumption, and CPU cycle deltas across 10+ runtimes (Python, C++, Rust, Go, Java, TypeScript, JavaScript).
+- 🔄 **"How Optima AI Works" Visual Workflow**: Interactive, hand-crafted end-to-end execution infographic breaking down submission steps (1–5), backend sandbox optimization pipeline (6 automated stages), and result iteration (7–10).
 - 🔒 **Algorand x402 Micropayment Protocol**: Decentralized micro-payment challenge & response protocol verified on the Algorand testnet via Plausible facilitator with SHA-256 cryptographic receipt digests.
 - 💻 **Cursor IDE-Style Workspace**: Interactive source code editor with live Split/Unified diff views, stdin execution support, AI test case generation, AI Copilot chat assistant, and Prettier code formatting.
 - 🎨 **Adaptive Theme System**: Theme engine supporting dark and light modes with custom semantic tokens, smooth CSS transitions, interactive 3D floating Finder terminal canvas, and a 60 FPS infinite live telemetry marquee.
@@ -67,6 +68,7 @@ SML-Code-Optimiser/
 │   │   │   ├── Hero3DTerminal.tsx # 3D Floating Finder Window Stack
 │   │   │   ├── InteractiveDotGrid.tsx # Interactive Canvas Background
 │   │   │   ├── LiveMetricsMarquee.tsx # 60 FPS Infinite Telemetry Marquee
+│   │   │   ├── WorkflowSection.tsx # How Optima AI Works Workflow Infographic
 │   │   │   ├── ThemeProvider.tsx # Theme Context & LocalStorage Sync
 │   │   │   ├── ThemeToggle.tsx   # Smooth Sun/Moon Theme Switcher
 │   │   │   └── compiler-tree/    # Compiler Architecture Visualizer
