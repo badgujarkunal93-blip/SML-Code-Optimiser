@@ -11,9 +11,11 @@ export class GroqOptimizationError extends Error {
 export interface StructuredOptimizationResult {
   optimizedCode: string
   reasoning: string
+  estimatedTimeComplexity: { original: string; optimized: string }
+  estimatedSpaceComplexity: { original: string; optimized: string }
   timeComplexity: { original: string; optimized: string }
   spaceComplexity: { original: string; optimized: string }
-  optimizationScore: number
+  optimizationScore: number // AI Estimate rating score (0-100)
   scoreBreakdown: {
     performance: number
     readability: number
@@ -26,6 +28,10 @@ export interface StructuredOptimizationResult {
   estimatedMemoryMb: { original: number; optimized: number }
   optimizationConfidence: number
   confidenceReasoning: string
+  aiEstimate: {
+    isEstimate: true
+    disclaimer: 'Complexity and scores are AI predictions. Empirical runtime performance is measured via multi-run sandbox execution.'
+  }
 }
 
 function stripMarkdownFences(text: string): string {
@@ -40,7 +46,6 @@ function stripMarkdownFences(text: string): string {
 
 function formatCodeIndentation(code: string): string {
   let cleaned = stripMarkdownFences(code).trim()
-  // Remove top explanatory comment headers if AI included any
   cleaned = cleaned.replace(/^(\/\/|#|\/\*).*Optimized using.*$/gim, '').trim()
 
   if (!cleaned.includes('\n') && (cleaned.includes(';') || cleaned.includes('{') || cleaned.includes(':'))) {
@@ -75,17 +80,22 @@ function parseJsonResponse(rawContent: string): StructuredOptimizationResult {
     throw new Error("JSON response missing required key 'optimized_code'")
   }
 
+  const origTimeComp = data.time_complexity?.original || 'Complexity estimate unavailable'
+  const optTimeComp = data.time_complexity?.optimized || 'Complexity estimate unavailable'
+
+  const origSpaceComp = data.space_complexity?.original || 'Complexity estimate unavailable'
+  const optSpaceComp = data.space_complexity?.optimized || 'Complexity estimate unavailable'
+
+  const estimatedTimeComp = { original: origTimeComp, optimized: optTimeComp }
+  const estimatedSpaceComp = { original: origSpaceComp, optimized: optSpaceComp }
+
   return {
     optimizedCode: formatCodeIndentation(String(data.optimized_code)),
     reasoning: String(data.reasoning || 'Code optimized for algorithmic efficiency and memory usage.').trim(),
-    timeComplexity: {
-      original: data.time_complexity?.original || 'O(n²)',
-      optimized: data.time_complexity?.optimized || 'O(n log n)',
-    },
-    spaceComplexity: {
-      original: data.space_complexity?.original || 'O(1)',
-      optimized: data.space_complexity?.optimized || 'O(n)',
-    },
+    estimatedTimeComplexity: estimatedTimeComp,
+    estimatedSpaceComplexity: estimatedSpaceComp,
+    timeComplexity: estimatedTimeComp,
+    spaceComplexity: estimatedSpaceComp,
     optimizationScore: typeof data.optimization_score === 'number' ? data.optimization_score : 95,
     scoreBreakdown: {
       performance: data.score_breakdown?.performance || 96,
@@ -96,18 +106,22 @@ function parseJsonResponse(rawContent: string): StructuredOptimizationResult {
     },
     detectedBottlenecks: Array.isArray(data.detected_bottlenecks)
       ? data.detected_bottlenecks
-      : ['Nested loops with O(n²) time complexity', 'Expensive redundant computations'],
+      : ['Nested iteration or redundant calculation', 'Excessive memory allocation'],
     optimizationSuggestions: Array.isArray(data.optimization_suggestions)
       ? data.optimization_suggestions
-      : ['Replaced nested loops with optimal algorithm', 'Utilized built-in memory-efficient structures'],
+      : ['Replaced redundant logic with optimal data structures', 'Utilized memory-efficient built-ins'],
     estimatedMemoryMb: {
       original: data.estimated_memory_mb?.original || 28,
       optimized: data.estimated_memory_mb?.optimized || 14,
     },
     optimizationConfidence: typeof data.optimization_confidence === 'number' ? data.optimization_confidence : 98,
     confidenceReasoning: String(
-      data.confidence_reasoning || 'Safe algorithmic transformation; verified execution equality and complexity reduction.'
+      data.confidence_reasoning || 'AI prediction based on AST algorithmic pattern analysis.'
     ).trim(),
+    aiEstimate: {
+      isEstimate: true,
+      disclaimer: 'Complexity and scores are AI predictions. Empirical runtime performance is measured via multi-run sandbox execution.',
+    },
   }
 }
 
@@ -118,7 +132,7 @@ CRITICAL MANDATORY RULES:
 1. LANGUAGE PRESERVATION: The output code MUST be written in the EXACT SAME programming language as specified in the prompt. NEVER translate to another language under any circumstances unless explicitly requested.
 2. NO CODE COMMENTS: Do NOT insert explanatory comments inside the optimized_code string. The optimized_code block must contain ONLY clean, executable source code without artificial filler comments. All explanations MUST be provided in the reasoning and suggestions fields.
 3. FORMATTING & BEAUTIFICATION: Output clean, beautifully formatted multi-line code following standard language conventions.
-4. DESCRIPTIVE NAMING: Improve single-letter or cryptic variable names (e.g. 'a' -> 'numbers') when safe.
+4. DESCRIPTIVE NAMING: Improve single-letter or cryptic variable names when safe.
 5. Output MUST strictly be a JSON object with the following schema:
 {
   "optimized_code": "string",
@@ -166,7 +180,6 @@ export async function testGroqConnection(): Promise<{
   const startTime = Date.now()
 
   try {
-    console.log(`[Groq Diagnostic] Sending test prompt 'Say Hello' to model ${CONFIG.GROQ.MODEL} (Key: ${apiKeyMasked})`)
     const res = await groq.chat.completions.create({
       model: CONFIG.GROQ.MODEL,
       messages: [{ role: 'user', content: 'Say Hello' }],
@@ -175,8 +188,6 @@ export async function testGroqConnection(): Promise<{
 
     const latencyMs = Date.now() - startTime
     const reply = res.choices[0]?.message?.content || 'Hello!'
-
-    console.log(`[Groq Diagnostic] Success in ${latencyMs}ms | Reply: ${reply.trim()}`)
 
     return {
       success: true,
@@ -187,7 +198,6 @@ export async function testGroqConnection(): Promise<{
     }
   } catch (err: any) {
     const latencyMs = Date.now() - startTime
-    console.error(`[Groq Diagnostic Error] ${err.name || 'Error'}: ${err.message}`)
     return {
       success: false,
       model: CONFIG.GROQ.MODEL,
@@ -235,35 +245,47 @@ export async function optimizeCode(
   requestId?: string
 ): Promise<StructuredOptimizationResult> {
   if (!CONFIG.GROQ.API_KEY) {
-    throw new GroqOptimizationError('GROQ_API_KEY is not configured in environment.')
+    throw new GroqOptimizationError('AI_SERVICE_UNAVAILABLE: GROQ_API_KEY is not configured on server.')
   }
 
   const groq = new Groq({ apiKey: CONFIG.GROQ.API_KEY })
   const userPrompt = `Target Programming Language: ${language.toUpperCase()}\nCRITICAL REQUIREMENT: Output code MUST be strictly written in ${language}.\n\nOriginal Code:\n${code}\n\nReturn the JSON response adhering strictly to the system schema.`
-  const startTime = Date.now()
 
-  try {
-    console.log(`[Groq API] Optimizing code for ${requestId || 'req'} (${language}) via ${CONFIG.GROQ.MODEL}...`)
-    const response = await groq.chat.completions.create({
-      model: CONFIG.GROQ.MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.2,
-      max_completion_tokens: 2048,
-    })
+  const maxRetries = 2
+  let attempt = 0
+  let lastError: any = null
 
-    const elapsedMs = Date.now() - startTime
-    const content = response.choices[0]?.message?.content || ''
-    const parsed = parseJsonResponse(content)
+  while (attempt <= maxRetries) {
+    const startTime = Date.now()
+    try {
+      console.log(`[Groq API] Optimizing code for ${requestId || 'req'} (Attempt ${attempt + 1}/${maxRetries + 1})...`)
+      const response = await groq.chat.completions.create({
+        model: CONFIG.GROQ.MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        max_completion_tokens: 2048,
+      })
 
-    console.log(`[Groq API] Optimization completed in ${elapsedMs}ms for ${requestId || 'req'}`)
-    return parsed
-  } catch (error: any) {
-    const elapsedMs = Date.now() - startTime
-    console.error(`[Groq API Error] Failed after ${elapsedMs}ms for ${requestId || 'req'}:`, error)
-    throw new GroqOptimizationError(error.message || 'Groq API request failed')
+      const elapsedMs = Date.now() - startTime
+      const content = response.choices[0]?.message?.content || ''
+      const parsed = parseJsonResponse(content)
+
+      console.log(`[Groq API] Optimization completed in ${elapsedMs}ms for ${requestId || 'req'}`)
+      return parsed
+    } catch (error: any) {
+      lastError = error
+      attempt++
+      if (attempt <= maxRetries) {
+        const backoffMs = Math.pow(2, attempt) * 500
+        console.warn(`[Groq API] Retryable error (attempt ${attempt}): ${error.message}. Retrying in ${backoffMs}ms...`)
+        await new Promise((r) => setTimeout(r, backoffMs))
+      }
+    }
   }
+
+  throw new GroqOptimizationError(`AI_SERVICE_UNAVAILABLE: Groq AI service request failed (${lastError?.message || 'Unknown error'})`)
 }

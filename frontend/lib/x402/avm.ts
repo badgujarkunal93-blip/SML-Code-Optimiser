@@ -7,6 +7,9 @@ export interface PaymentDetails {
   asset: number
   note: string
   facilitator: string
+  requestId?: string
+  expiresAt?: number
+  payloadHash?: string
 }
 
 export class AVMWalletManager {

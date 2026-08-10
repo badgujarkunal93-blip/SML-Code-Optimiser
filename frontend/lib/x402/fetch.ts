@@ -4,12 +4,52 @@ export interface OptimizationRequest {
   code: string
   language: string
   transactionId?: string
+  requestId?: string
   stdin?: string
+  testCases?: any[]
 }
 
 export interface OptimizationResponse {
   requestId: string
   optimizationId: string
+  status: string
+  payment?: {
+    status: string
+    transactionId: string
+    amount: number
+    asset: number
+    network: string
+  }
+  optimization?: {
+    originalCode: string
+    optimizedCode: string
+    reasoning: string
+    estimatedTimeComplexity: { original: string; optimized: string }
+    estimatedSpaceComplexity: { original: string; optimized: string }
+    optimizationScore: number
+    aiEstimate: { isEstimate: boolean; disclaimer: string }
+  }
+  verification?: {
+    correctnessVerified: boolean
+    verificationMethod: string
+    verificationLevel: string
+    testsRun: number
+    testsPassed: number
+    testsFailed: number
+    testDetails: any[]
+  }
+  benchmark?: {
+    originalMedianMs: number
+    optimizedMedianMs: number
+    improvementPct: number
+    p95OriginalMs: number
+    p95OptimizedMs: number
+    speedupMultiplier: number
+    originalStats: any
+    optimizedStats: any
+    confidenceLevel: string
+  }
+  // Backward compatibility fields for UI components
   optimizedCode: string
   reasoning: string
   timeComplexity?: { original: string; optimized: string }
@@ -34,6 +74,10 @@ export interface OptimizationResponse {
     correctnessVerified: boolean
     originalStdout?: string
     optimizedStdout?: string
+    testsRun?: number
+    testsPassed?: number
+    testsFailed?: number
+    verificationLevel?: string
   }
   transaction: {
     id: string
@@ -58,6 +102,7 @@ export interface TestCaseItem {
 
 export interface X402PaymentError {
   error: string
+  status?: string
   payment: PaymentDetails
   requestId: string
 }
@@ -129,6 +174,19 @@ class X402Client {
     return data.reply
   }
 
+  async createChallenge(code: string, language: string): Promise<PaymentDetails> {
+    const res = await fetch(`${this.baseUrl}/payment/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, language }),
+    })
+    if (!res.ok) {
+      throw new Error('Failed to issue payment challenge')
+    }
+    const data = await res.json()
+    return data.payment
+  }
+
   async optimize(
     request: OptimizationRequest,
     onPaymentRequired: (payment: PaymentDetails) => Promise<boolean>
@@ -145,7 +203,7 @@ class X402Client {
 
     if (initialResponse.status === 402 && !isDevBypass) {
       const errorData: X402PaymentError = await initialResponse.json()
-      const paymentDetails = errorData.payment
+      const paymentDetails = errorData.payment || (await this.createChallenge(request.code, request.language))
 
       const approved = await onPaymentRequired(paymentDetails)
       if (!approved) {
@@ -159,8 +217,13 @@ class X402Client {
         headers: {
           'Content-Type': 'application/json',
           'X-Payment-TxID': txId,
+          'X-Request-ID': paymentDetails.requestId || '',
         },
-        body: JSON.stringify({ ...request, transactionId: txId }),
+        body: JSON.stringify({
+          ...request,
+          transactionId: txId,
+          requestId: paymentDetails.requestId || '',
+        }),
       })
 
       if (!paidResponse.ok) {

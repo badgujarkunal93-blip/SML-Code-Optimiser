@@ -80,7 +80,7 @@ function truncateOutput(text: string, maxBytes: number): { text: string; truncat
 }
 
 /**
- * Execute code via isolated Piston sandbox.
+ * Execute code via isolated Piston sandbox with retries for transient service errors.
  * CRITICAL SECURITY GUARANTEE: Never falls back to local host process execution.
  */
 export async function runCode(code: string, language: string, stdin?: string): Promise<ExecutionResult> {
@@ -118,39 +118,105 @@ export async function runCode(code: string, language: string, stdin?: string): P
   }
 
   const executeUrl = `${CONFIG.PISTON.URL.replace(/\/$/, '')}/execute`
-  const controller = new AbortController()
-  const timeoutMs = CONFIG.SECURITY.EXECUTION_TIMEOUT_SECONDS * 1000
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  const maxRetries = CONFIG.PISTON.MAX_RETRIES || 2
+  let attempt = 0
+  let lastErrorResult: ExecutionResult | null = null
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'User-Agent': 'OptiChain/1.0',
-  }
-  if (CONFIG.PISTON.API_KEY) {
-    headers['Authorization'] = CONFIG.PISTON.API_KEY
-  }
+  while (attempt <= maxRetries) {
+    const controller = new AbortController()
+    const timeoutMs = CONFIG.SECURITY.EXECUTION_TIMEOUT_SECONDS * 1000
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
-  try {
-    const response = await fetch(executeUrl, {
-      method: 'POST',
-      headers,
-      signal: controller.signal,
-      body: JSON.stringify({
-        language: runtime.canonical,
-        version: runtime.version,
-        files: [{ content: code }],
-        stdin: stdin || '',
-      }),
-    })
-    clearTimeout(timeoutId)
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'OptimaAI/1.0',
+    }
+    if (CONFIG.PISTON.API_KEY) {
+      headers['Authorization'] = CONFIG.PISTON.API_KEY
+    }
 
-    const wallTimeMs = Date.now() - startTime
+    try {
+      const response = await fetch(executeUrl, {
+        method: 'POST',
+        headers,
+        signal: controller.signal,
+        body: JSON.stringify({
+          language: runtime.canonical,
+          version: runtime.version,
+          files: [{ content: code }],
+          stdin: stdin || '',
+        }),
+      })
+      clearTimeout(timeoutId)
 
-    if (!response.ok) {
+      const wallTimeMs = Date.now() - startTime
+
+      if (!response.ok) {
+        lastErrorResult = {
+          success: false,
+          stdout: '',
+          stderr: 'Secure execution service returned HTTP error.',
+          exitCode: -1,
+          timeMs: wallTimeMs,
+          pistonTimeMs: 0,
+          timedOut: false,
+          errorCode: 'EXECUTION_SERVICE_UNAVAILABLE',
+          errorMessage: 'Secure code execution is temporarily unavailable.',
+        }
+        attempt++
+        if (attempt <= maxRetries) {
+          await new Promise((r) => setTimeout(r, 200 * attempt))
+          continue
+        }
+        return lastErrorResult
+      }
+
+      const data: any = await response.json()
+      const runResult = data.run || {}
+      const rawStdout = String(runResult.stdout || '').trimEnd()
+      const rawStderr = String(runResult.stderr || '').trimEnd()
+      const exitCode = runResult.code !== null && runResult.code !== undefined ? Number(runResult.code) : -1
+
+      const pistonTimeSec = runResult.time
+      const pistonTimeMs = pistonTimeSec !== undefined && pistonTimeSec !== null ? pistonTimeSec * 1000 : wallTimeMs
+
+      const stdoutObj = truncateOutput(rawStdout, CONFIG.SECURITY.MAX_EXECUTION_OUTPUT_BYTES)
+      const stderrObj = truncateOutput(rawStderr, CONFIG.SECURITY.MAX_EXECUTION_OUTPUT_BYTES)
+
       return {
+        success: exitCode === 0,
+        stdout: stdoutObj.text,
+        stderr: stderrObj.text,
+        exitCode,
+        timeMs: Math.round(wallTimeMs * 100) / 100,
+        pistonTimeMs: Math.round(pistonTimeMs * 100) / 100,
+        timedOut: false,
+        stdoutTruncated: stdoutObj.truncated,
+        stderrTruncated: stderrObj.truncated,
+      }
+    } catch (err: any) {
+      clearTimeout(timeoutId)
+      const wallTimeMs = Date.now() - startTime
+      const isTimeout = err.name === 'AbortError' || err.message?.includes('aborted')
+
+      if (isTimeout) {
+        return {
+          success: false,
+          stdout: '',
+          stderr: `Execution exceeded the allowed time limit of ${CONFIG.SECURITY.EXECUTION_TIMEOUT_SECONDS}s.`,
+          exitCode: -1,
+          timeMs: wallTimeMs,
+          pistonTimeMs: 0,
+          timedOut: true,
+          errorCode: 'TIMEOUT',
+          errorMessage: 'Execution exceeded the allowed time limit.',
+        }
+      }
+
+      lastErrorResult = {
         success: false,
         stdout: '',
-        stderr: 'Secure execution service returned HTTP error.',
+        stderr: 'Secure code execution is temporarily unavailable.',
         exitCode: -1,
         timeMs: wallTimeMs,
         pistonTimeMs: 0,
@@ -158,60 +224,25 @@ export async function runCode(code: string, language: string, stdin?: string): P
         errorCode: 'EXECUTION_SERVICE_UNAVAILABLE',
         errorMessage: 'Secure code execution is temporarily unavailable.',
       }
-    }
 
-    const data: any = await response.json()
-    const runResult = data.run || {}
-    const rawStdout = String(runResult.stdout || '').trimEnd()
-    const rawStderr = String(runResult.stderr || '').trimEnd()
-    const exitCode = runResult.code !== null && runResult.code !== undefined ? Number(runResult.code) : -1
-
-    const pistonTimeSec = runResult.time
-    const pistonTimeMs = pistonTimeSec !== undefined && pistonTimeSec !== null ? pistonTimeSec * 1000 : wallTimeMs
-
-    const stdoutObj = truncateOutput(rawStdout, CONFIG.SECURITY.MAX_EXECUTION_OUTPUT_BYTES)
-    const stderrObj = truncateOutput(rawStderr, CONFIG.SECURITY.MAX_EXECUTION_OUTPUT_BYTES)
-
-    return {
-      success: exitCode === 0,
-      stdout: stdoutObj.text,
-      stderr: stderrObj.text,
-      exitCode,
-      timeMs: Math.round(wallTimeMs * 100) / 100,
-      pistonTimeMs: Math.round(pistonTimeMs * 100) / 100,
-      timedOut: false,
-      stdoutTruncated: stdoutObj.truncated,
-      stderrTruncated: stderrObj.truncated,
-    }
-  } catch (err: any) {
-    clearTimeout(timeoutId)
-    const wallTimeMs = Date.now() - startTime
-    const isTimeout = err.name === 'AbortError' || err.message?.includes('aborted')
-
-    if (isTimeout) {
-      return {
-        success: false,
-        stdout: '',
-        stderr: `Execution exceeded the allowed time limit of ${CONFIG.SECURITY.EXECUTION_TIMEOUT_SECONDS}s.`,
-        exitCode: -1,
-        timeMs: wallTimeMs,
-        pistonTimeMs: 0,
-        timedOut: true,
-        errorCode: 'TIMEOUT',
-        errorMessage: 'Execution exceeded the allowed time limit.',
+      attempt++
+      if (attempt <= maxRetries) {
+        await new Promise((r) => setTimeout(r, 200 * attempt))
       }
     }
+  }
 
-    return {
+  return (
+    lastErrorResult || {
       success: false,
       stdout: '',
-      stderr: 'Secure code execution is temporarily unavailable.',
+      stderr: 'Secure code execution failed.',
       exitCode: -1,
-      timeMs: wallTimeMs,
+      timeMs: Date.now() - startTime,
       pistonTimeMs: 0,
       timedOut: false,
       errorCode: 'EXECUTION_SERVICE_UNAVAILABLE',
       errorMessage: 'Secure code execution is temporarily unavailable.',
     }
-  }
+  )
 }

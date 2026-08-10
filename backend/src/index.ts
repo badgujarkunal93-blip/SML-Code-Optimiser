@@ -2,7 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import crypto from "crypto";
-import { CONFIG, getMaskedApiKey } from "./config.js";
+import { CONFIG, validateConfig, getMaskedApiKey } from "./config.js";
 import { testGroqConnection, optimizeCode, chatWithGroq } from "./services/groq.js";
 import { runCode, isLanguageSupported, getSupportedLanguagesList } from "./services/piston.js";
 import {
@@ -13,11 +13,15 @@ import {
 
 import { detectLanguage } from "./services/detector.js";
 import { analyzeCode, validateSyntax } from "./services/compiler.js";
-import { computeMultiRunBenchmark, computeBenchmark } from "./services/benchmark.js";
-import { verifyMultiCaseEquivalence, verifyOutputEquivalence } from "./services/verifier.js";
+import { computeMultiRunBenchmark } from "./services/benchmark.js";
+import { verifyMultiCaseEquivalence } from "./services/verifier.js";
+import { createPaymentChallenge, verifyStrictPayment } from "./services/payment.js";
 import { cacheService } from "./services/cache.js";
 import { loggerService } from "./services/logger.js";
 import Groq from "groq-sdk";
+
+// Call production guard check on server startup
+validateConfig();
 
 const app = new Hono();
 
@@ -46,7 +50,7 @@ app.use(
   "*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "X-Payment-TxID", "Authorization"],
+    allowHeaders: ["Content-Type", "X-Payment-TxID", "X-Request-ID", "Authorization"],
     allowMethods: ["GET", "POST", "OPTIONS"],
   })
 );
@@ -115,6 +119,23 @@ app.post("/detect-language", async (c) => {
   }
 });
 
+// Issues a cryptographic Algorand x402 payment challenge bound to code hash & requestId
+app.post("/payment/challenge", async (c) => {
+  try {
+    const { code, language, userId } = await c.req.json();
+    if (!code || !code.trim()) {
+      return c.json({ error: "Source code is required to issue payment challenge." }, 400);
+    }
+    const challenge = await createPaymentChallenge(code, language || "python", userId);
+    return c.json({
+      success: true,
+      payment: challenge,
+    });
+  } catch (err: any) {
+    return c.json({ error: "Failed to generate payment challenge: " + err.message }, 500);
+  }
+});
+
 // Standalone Code Execution Endpoint (Piston Engine Sandbox Only)
 app.post("/execute", async (c) => {
   const clientIp = c.req.header("x-forwarded-for") || "client_ip";
@@ -162,6 +183,53 @@ app.post("/execute", async (c) => {
       errorMessage: err.message,
     });
     return c.json({ error: "Execution Timeout or Sandbox Error" }, 500);
+  }
+});
+
+// Standalone Behavioral Equivalence Verification Endpoint
+app.post("/verify", async (c) => {
+  const clientIp = c.req.header("x-forwarded-for") || "client_ip";
+  if (!checkRateLimit(clientIp)) {
+    return c.json({ error: "Too Many Requests: Rate limit exceeded." }, 429);
+  }
+  try {
+    const { originalCode, optimizedCode, language, stdinInput, testCases } = await c.req.json();
+    if (!originalCode || !optimizedCode) {
+      return c.json({ error: "Both originalCode and optimizedCode are required." }, 400);
+    }
+    const result = await verifyMultiCaseEquivalence(
+      originalCode,
+      optimizedCode,
+      language || "python",
+      stdinInput,
+      testCases
+    );
+    return c.json(result);
+  } catch (err: any) {
+    return c.json({ error: "Equivalence verification failed: " + err.message }, 500);
+  }
+});
+
+// Standalone Multi-Run Benchmarking Endpoint
+app.post("/benchmark", async (c) => {
+  const clientIp = c.req.header("x-forwarded-for") || "client_ip";
+  if (!checkRateLimit(clientIp)) {
+    return c.json({ error: "Too Many Requests: Rate limit exceeded." }, 429);
+  }
+  try {
+    const { originalCode, optimizedCode, language, stdinInput } = await c.req.json();
+    if (!originalCode || !optimizedCode) {
+      return c.json({ error: "Both originalCode and optimizedCode are required." }, 400);
+    }
+    const result = await computeMultiRunBenchmark(
+      originalCode,
+      optimizedCode,
+      language || "python",
+      stdinInput
+    );
+    return c.json(result);
+  } catch (err: any) {
+    return c.json({ error: "Benchmarking failed: " + err.message }, 500);
   }
 });
 
@@ -221,11 +289,12 @@ app.post("/optimize", async (c) => {
   }
 
   const startTime = Date.now();
-  const requestId = `opt_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
-
+  
   try {
     const body = await c.req.json();
-    const { code, language, mode, targetLanguage, stdinInput, testCases } = body;
+    const { code, language, mode, targetLanguage, stdinInput, testCases, transactionId, requestId: bodyRequestId, walletAddress } = body;
+    const headerTxId = c.req.header("X-Payment-TxID");
+    const activeTxId = transactionId || headerTxId;
 
     if (!code || !code.trim()) {
       return c.json({ error: "Syntax Error: Code input cannot be empty." }, 400);
@@ -251,7 +320,40 @@ app.post("/optimize", async (c) => {
       }, 400);
     }
 
-    // Step 2: Input Code Syntax Validation
+    // Step 2: Payment Verification Gate
+    let activeRequestId = bodyRequestId;
+    let paymentChallengeDetails = null;
+
+    if (!activeRequestId) {
+      paymentChallengeDetails = await createPaymentChallenge(code, activeLang, walletAddress);
+      activeRequestId = paymentChallengeDetails.requestId;
+    }
+
+    const isDevBypass = CONFIG.DEV_BYPASS_PAYMENT && CONFIG.NODE_ENV !== "production";
+
+    if (!isDevBypass) {
+      const paymentCheck = await verifyStrictPayment({
+        transactionId: activeTxId || "",
+        requestId: activeRequestId,
+        code,
+        language: activeLang,
+        senderAddress: walletAddress,
+      });
+
+      if (!paymentCheck.valid) {
+        if (!paymentChallengeDetails) {
+          paymentChallengeDetails = await createPaymentChallenge(code, activeLang, walletAddress);
+        }
+        return c.json({
+          error: paymentCheck.error || "Payment required to execute optimization.",
+          status: paymentCheck.status || "PAYMENT_REQUIRED",
+          payment: paymentChallengeDetails,
+          requestId: activeRequestId,
+        }, 402);
+      }
+    }
+
+    // Step 3: Input Code Syntax Validation
     const syntaxCheck = validateSyntax(code, activeLang);
     if (!syntaxCheck.valid) {
       return c.json({
@@ -270,10 +372,10 @@ app.post("/optimize", async (c) => {
       return c.json(cachedResult);
     }
 
-    // Step 3: Groq AI Optimization
-    const optResult = await optimizeCode(code, activeLang, requestId);
+    // Step 4: Groq AI Optimization
+    const optResult = await optimizeCode(code, activeLang, activeRequestId);
 
-    // Step 4: Candidate Code Syntax Check
+    // Step 5: Candidate Code Syntax Check
     const optSyntaxCheck = validateSyntax(optResult.optimizedCode, targetLanguage || activeLang);
     if (!optSyntaxCheck.valid) {
       return c.json({
@@ -283,7 +385,7 @@ app.post("/optimize", async (c) => {
       }, 400);
     }
 
-    // Step 5: Multi-Case Correctness Verification
+    // Step 6: Multi-Case Correctness Verification
     const verification = await verifyMultiCaseEquivalence(
       code,
       optResult.optimizedCode,
@@ -292,7 +394,7 @@ app.post("/optimize", async (c) => {
       testCases
     );
 
-    // Step 6: Multi-Run Benchmark with Median Statistics
+    // Step 7: Multi-Run Benchmark with Median Statistics
     const benchmark = await computeMultiRunBenchmark(
       code,
       optResult.optimizedCode,
@@ -300,16 +402,53 @@ app.post("/optimize", async (c) => {
       stdinInput
     );
 
-    // Step 7: Decision Gate Accept / Reject
+    // Step 8: Decision Gate Accept / Reject
     const isAccepted = verification.correctnessVerified;
     const isPerformanceImproved = benchmark.improvementPct > 0;
     const finalStatus = isAccepted ? (isPerformanceImproved ? "ACCEPTED" : "VALID_BUT_NO_PERFORMANCE_GAIN") : "REJECTED";
 
     const fullResponse = {
-      requestId,
+      requestId: activeRequestId,
       optimizationId: `opt_${crypto.randomUUID()}`,
       language: activeLang,
       status: finalStatus,
+      payment: {
+        status: isDevBypass ? "DEV_BYPASS_PAYMENT" : "PAYMENT_VERIFIED",
+        transactionId: activeTxId || `dev_bypass_tx_${activeRequestId}`,
+        amount: CONFIG.ALGORAND.REQUIRED_PAYMENT_AMOUNT,
+        asset: CONFIG.ALGORAND.USDC_ASSET_ID,
+        network: CONFIG.ALGORAND.NETWORK,
+      },
+      optimization: {
+        originalCode: code,
+        optimizedCode: optResult.optimizedCode,
+        reasoning: optResult.reasoning,
+        estimatedTimeComplexity: optResult.estimatedTimeComplexity,
+        estimatedSpaceComplexity: optResult.estimatedSpaceComplexity,
+        optimizationScore: optResult.optimizationScore,
+        aiEstimate: optResult.aiEstimate,
+      },
+      verification: {
+        correctnessVerified: verification.correctnessVerified,
+        verificationMethod: verification.verificationMethod,
+        verificationLevel: verification.verificationLevel,
+        testsRun: verification.testsRun,
+        testsPassed: verification.testsPassed,
+        testsFailed: verification.testsFailed,
+        testDetails: verification.testDetails,
+      },
+      benchmark: {
+        originalMedianMs: benchmark.originalTimeMs,
+        optimizedMedianMs: benchmark.optimizedTimeMs,
+        improvementPct: benchmark.improvementPct,
+        p95OriginalMs: benchmark.originalStats.p95,
+        p95OptimizedMs: benchmark.optimizedStats.p95,
+        speedupMultiplier: benchmark.speedupMultiplier,
+        originalStats: benchmark.originalStats,
+        optimizedStats: benchmark.optimizedStats,
+        confidenceLevel: benchmark.confidenceLevel,
+      },
+      // Backwards compatibility bindings for frontend UI components
       optimizedCode: optResult.optimizedCode,
       reasoning: optResult.reasoning,
       timeComplexity: optResult.timeComplexity,
@@ -319,8 +458,6 @@ app.post("/optimize", async (c) => {
       detectedBottlenecks: optResult.detectedBottlenecks,
       optimizationSuggestions: optResult.optimizationSuggestions,
       estimatedMemoryMb: optResult.estimatedMemoryMb,
-      optimizationConfidence: isAccepted ? optResult.optimizationConfidence : 0,
-      confidenceReasoning: isAccepted ? optResult.confidenceReasoning : "Optimization rejected due to correctness verification failure.",
       metrics: {
         originalTimeMs: benchmark.originalTimeMs,
         optimizedTimeMs: benchmark.optimizedTimeMs,
@@ -334,15 +471,13 @@ app.post("/optimize", async (c) => {
         verificationLevel: verification.verificationLevel,
       },
       staticAnalysis,
-      verification,
-      benchmark,
       transaction: {
-        id: `dev_bypass_tx_${requestId}`,
-        amount: 0,
-        asset: 31566704,
-        explorerUrl: "https://testnet.algorand.com",
+        id: activeTxId || `dev_bypass_tx_${activeRequestId}`,
+        amount: CONFIG.ALGORAND.REQUIRED_PAYMENT_AMOUNT,
+        asset: CONFIG.ALGORAND.USDC_ASSET_ID,
+        explorerUrl: `https://testnet.algorand.com/tx/${activeTxId || ''}`,
         settled: true,
-        facilitator: "Development Mode Bypass",
+        facilitator: isDevBypass ? "Development Mode Bypass" : "Plausible x402 Facilitator",
       },
     };
 
@@ -350,7 +485,7 @@ app.post("/optimize", async (c) => {
     if (isAccepted) {
       cacheService.set(cacheKey, fullResponse, 300);
       saveOptimization({
-        requestId,
+        requestId: activeRequestId,
         code,
         optimizedCode: optResult.optimizedCode,
         language: activeLang,
@@ -361,11 +496,12 @@ app.post("/optimize", async (c) => {
           improvementPct: benchmark.improvementPct,
           correctnessVerified: verification.correctnessVerified,
         },
+        transactionId: activeTxId,
       }).catch((err) => console.error("Firestore save warning:", err.message));
     }
 
     loggerService.logRequest({
-      requestId,
+      requestId: activeRequestId,
       timestamp: new Date().toISOString(),
       endpoint: "/optimize",
       inputLanguage: activeLang,
@@ -375,8 +511,9 @@ app.post("/optimize", async (c) => {
 
     return c.json(fullResponse);
   } catch (err: any) {
+    const reqId = `err_${Date.now()}`;
     loggerService.logRequest({
-      requestId,
+      requestId: reqId,
       timestamp: new Date().toISOString(),
       endpoint: "/optimize",
       inputLanguage: "unknown",
@@ -386,12 +523,12 @@ app.post("/optimize", async (c) => {
     });
 
     const userFriendlyError = err.message?.includes("GROQ_API_KEY")
-      ? "Backend Offline: GROQ_API_KEY is not configured on the server."
+      ? "AI_SERVICE_UNAVAILABLE: GROQ_API_KEY is not configured on the server."
       : err.message?.includes("timeout")
-      ? "Execution Timeout: The code snippet exceeded the sandbox execution limit."
-      : "Optimization Failed: An error occurred during verification or optimization.";
+      ? "BENCHMARK_TIMEOUT: Execution exceeded the sandbox execution limit."
+      : err.message || "Optimization Failed: Internal server error.";
 
-    return c.json({ error: userFriendlyError, requestId }, 500);
+    return c.json({ error: userFriendlyError, requestId: reqId }, 500);
   }
 });
 

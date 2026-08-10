@@ -9,16 +9,19 @@
 [![Piston API](https://img.shields.io/badge/Sandbox-Piston_v2-green?style=flat-square)](https://github.com/engineer-man/piston)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](LICENSE)
 
-**Optima AI** is an enterprise-grade, autonomous code optimization and performance auditing platform. Powered by Groq Llama-3.3 70B LLM AST reduction, multi-runtime Piston execution sandboxes, and the Algorand x402 micropayment settlement protocol, Optima AI analyzes codebases, eliminates algorithmic bottlenecks, verifies output equivalence, and calculates wall-clock millisecond speedups.
+**Optima AI** is a hardened, autonomous code optimization and performance auditing platform. Powered by Groq Llama-3.3 70B LLM AST reduction, multi-runtime Piston execution sandboxes, and the Algorand x402 micropayment settlement protocol, Optima AI analyzes codebases, eliminates algorithmic bottlenecks, performs empirical behavioral equivalence testing, and calculates statistically robust median speedups across multi-run benchmarks.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Key Hardened Features
 
 - 🧠 **Groq Llama-3.3 70B AST Reduction**: Automatically refactors algorithmic bottlenecks (e.g. $O(n^2)$ Bubble Sort to $O(n \log n)$ Timsort/QuickSort), performs dead-code elimination, prunes heap allocations, and vectorizes loops.
-- 🧪 **Piston Execution Sandbox**: Executes original vs. optimized code in real-time sandboxes to measure wall-clock latency, peak RSS memory consumption, and CPU cycle deltas across 10+ runtimes (Python, C++, Rust, Go, Java, TypeScript, JavaScript).
-- 🔄 **"How Optima AI Works" Visual Workflow**: Interactive, hand-crafted end-to-end execution infographic breaking down submission steps (1–5), backend sandbox optimization pipeline (6 automated stages), and result iteration (7–10).
-- 🔒 **Algorand x402 Micropayment Protocol**: Decentralized micro-payment challenge & response protocol verified on the Algorand testnet via Plausible facilitator with SHA-256 cryptographic receipt digests.
+- 🧪 **Empirical Behavioral Equivalence Testing**: Replaces unproven "formal verification" claims with empirical multi-case behavioral equivalence verification across boundary cases (empty input, min/max int), edge cases (sorted arrays, duplicates, negative numbers), and language-aware fuzz inputs.
+- ⏱️ **Multi-Run Median Benchmarking**: Primed container warmup runs followed by 10+ measurement runs collecting Median, Min, Max, P95 Percentile, and Standard Deviation. Speedup percentage is reported using **MEDIAN** as the headline metric.
+- 🔒 **Algorand x402 Micropayment Protocol**: Cryptographically bound challenge-response payment protocol verified on the Algorand testnet via Plausible facilitator.
+  - **12-Rule Verification Gate**: Strictly checks confirmation round (`confirmedRound > 0`), non-failed transaction status, receiver address, USDC asset ID, payment amount, challenge expiration, and request payload cryptographic binding (`SHA256(requestId + codeHash + language + amount + receiver + assetId)`).
+  - **Persistent Replay Protection**: Single-use transaction IDs enforced via atomic database inserts that persist across server restarts.
+- 🛡️ **Production Bypass Fail-Fast**: Application fails fast on startup if `DEV_BYPASS_PAYMENT=true` is enabled in `NODE_ENV=production`.
 - 💻 **Cursor IDE-Style Workspace**: Interactive source code editor with live Split/Unified diff views, stdin execution support, AI test case generation, AI Copilot chat assistant, and Prettier code formatting.
 - 🎨 **Adaptive Theme System**: Theme engine supporting dark and light modes with custom semantic tokens, smooth CSS transitions, interactive 3D floating Finder terminal canvas, and a 60 FPS infinite live telemetry marquee.
 - 📊 **Deep Performance Analytics**: 8-axis architecture radar, execution curve line charts, CPU utilization timeline, memory RSS profile, and exportable audit reports (JSON, Markdown, CSV, HTML).
@@ -38,21 +41,22 @@ flowchart TD
         Client --> ThemeEngine[Theme System Dark/Light Mode]
     end
 
-    Client --> |REST API Requests| Gateway[Express / Python Gateway API]
+    Client --> |REST API Requests| Gateway[Hono / Node.js API Gateway]
 
-    subgraph Backend [Backend Engine & Integration Layer]
+    subgraph Backend [Backend Engine & Hardened Gateway Layer]
+        Gateway --> RateLimiter[Sliding Window IP & Wallet Rate Limiter]
+        Gateway --> PaymentEngine[Algorand x402 Strict Payment Verifier]
         Gateway --> Detector[Language & AST Detector]
         Gateway --> GroqService[Groq LLM Llama-3.3-70B AST Reducer]
-        Gateway --> PistonService[Piston Multi-Runtime Execution Sandbox]
-        Gateway --> Verifier[Output Equivalence & Boundary Verifier]
-        Gateway --> AVM[Algorand x402 Facilitator & AVM Client]
-        Gateway --> Firestore[Cloud Firestore Persistence Log]
+        Gateway --> PistonService[Piston Multi-Runtime Sandbox]
+        Gateway --> Verifier[Empirical Equivalence Tester]
+        Gateway --> BenchmarkEngine[Multi-Run Median & P95 Benchmark Engine]
+        Gateway --> DB[Persistent Firestore & File Storage]
     end
 
     GroqService --> |Emits Optimized Code| Gateway
     PistonService --> |Wall-Clock Microseconds & RSS RAM| Verifier
-    AVM --> |Tx Hash 0x8f2d...| Gateway
-    Firestore --> |Persists Audit History| Gateway
+    PaymentEngine --> |SHA256 Payload & Atomic Replay Guard| DB
     Gateway --> |Optimization Response Payload| Client
 ```
 
@@ -70,180 +74,131 @@ SML-Code-Optimiser/
 │   │   │   ├── LiveMetricsMarquee.tsx # 60 FPS Infinite Telemetry Marquee
 │   │   │   ├── WorkflowSection.tsx # How Optima AI Works Workflow Infographic
 │   │   │   ├── ThemeProvider.tsx # Theme Context & LocalStorage Sync
-│   │   │   ├── ThemeToggle.tsx   # Smooth Sun/Moon Theme Switcher
-│   │   │   └── compiler-tree/    # Compiler Architecture Visualizer
+│   │   │   └── ThemeToggle.tsx   # Smooth Sun/Moon Theme Switcher
 │   │   ├── workspace/            # Source Code Workspace (IDE)
 │   │   ├── results/              # Detailed Benchmark & Audit Reports
 │   │   ├── dashboard/            # Optimization History & Analytics
-│   │   ├── history/              # Persistent Execution Records
-│   │   ├── settings/             # System Preferences & API Config
-│   │   ├── globals.css           # Semantic Color System & Design Tokens
-│   │   ├── layout.tsx            # Global Navigation & Layout Shell
-│   │   └── page.tsx              # Viewport-Constrained Hero Landing Page
+│   │   └── history/              # Persistent Execution Records
 │   ├── lib/                      # Client Utilities & Formatters
-│   │   ├── prettierFormatter.ts  # Prettier Formatting Utility
-│   │   ├── languageDetector.ts   # Client-Side Language Detection
 │   │   └── x402/                 # Algorand AVM Client & Fetch Wrappers
-│   ├── .prettierrc               # Prettier Options Configuration
 │   └── package.json
 │
-├── backend/                      # Node.js / Express TypeScript Gateway API
+├── backend/                      # Node.js / Hono TypeScript Gateway API
 │   ├── src/
 │   │   ├── services/
-│   │   │   ├── groq.ts           # Groq Llama-3.3-70B API Integration
-│   │   │   ├── piston.ts         # Piston Code Execution Sandbox
-│   │   │   ├── payment.ts        # Algorand x402 Micropayment Engine
+│   │   │   ├── db.ts             # Persistent DB & Atomic Replay Storage
+│   │   │   ├── payment.ts        # Algorand x402 12-Rule Micropayment Engine
+│   │   │   ├── verifier.ts       # Empirical Behavioral Equivalence Testing
+│   │   │   ├── benchmark.ts      # Warmup + 10-Run Median Benchmarking
+│   │   │   ├── groq.ts           # Groq Llama-3.3-70B API & Retries
+│   │   │   ├── piston.ts         # Piston Execution Sandbox & Retries
 │   │   │   ├── detector.ts       # Code AST & Language Detector
-│   │   │   ├── verifier.ts       # Output Equivalence Verification
-│   │   │   ├── compiler.ts       # Multi-Compiler Backend Flags
 │   │   │   └── firebase.ts       # Cloud Firestore Audit Persistence
-│   │   ├── config.ts             # Environment Settings & API Keys
-│   │   └── index.ts              # Express Server Entry Point & Routes
-│   ├── package.json
-│   └── tsconfig.json
+│   │   ├── tests/
+│   │   │   └── hardening.test.ts # Hardening Automated Test Suite
+│   │   ├── config.ts             # Environment Settings & Fail-Fast Rules
+│   │   └── index.ts              # API Gateway & Route Contracts
+│   └── package.json
 │
-├── routes/                       # Modular FastAPI / Python Routes
-├── services/                     # Python Optimization Service Layer
-├── config.py                     # Python Runtime Configuration
-├── main.py                       # Python API Entrypoint
-└── README.md
+├── .env.example                  # Environment Configuration Template
+└── package.json                  # Monorepo Scripts
 ```
 
 ---
 
-## ⚡ Quick Start & Setup
+## ⚡ x402 Micropayment Lifecycle
 
-### Prerequisites
-
-Ensure you have the following installed on your machine:
-- **Node.js**: v18.0.0 or higher
-- **npm**: v9.0.0 or higher
-- **Python**: 3.10+ (if running Python backend services)
-- **Git**
+```
+Client                              Gateway API                       Algorand Testnet / DB
+  │                                     │                                       │
+  ├─── 1. POST /payment/challenge ─────►│                                       │
+  │    (code, language, wallet)         ├── Compute SHA256 Payload Hash ───────►│ (Store Challenge)
+  │◄── 2. Payment Challenge Details ────┤                                       │
+  │    (amount, receiver, requestId)    │                                       │
+  │                                     │                                       │
+  ├─── 3. Sign & Submit Tx USDC ───────────────────────────────────────────────►│ (Confirmed)
+  │                                     │                                       │
+  ├─── 4. POST /optimize ──────────────►│                                       │
+  │    (X-Payment-TxID, requestId, code)├── 5. Verify 12 Strict Rules ─────────►│
+  │                                     │   - confirmedRound > 0                │
+  │                                     │   - receiver & asset match            │
+  │                                     │   - amount >= expected                │
+  │                                     │   - payloadHash matches code          │
+  │                                     │   - Atomic Replay Check ──────────────┤ (Mark Consumed)
+  │                                     ├── 6. Groq AST Optimization           │
+  │                                     ├── 7. Sandbox Execution (Piston)       │
+  │                                     ├── 8. Multi-Case Equivalence Test      │
+  │                                     ├── 9. Warmup + 10-Run Median Benchmark │
+  │◄── 10. Measured Optimization ───────┤                                       │
+```
 
 ---
 
-### 1. Clone the Repository
+## 🚀 Development Setup & Running
+
+### 1. Clone & Install Dependencies
 
 ```bash
 git clone https://github.com/badgujarkunal93-blip/SML-Code-Optimiser.git
 cd SML-Code-Optimiser
+npm install
+npm --prefix backend install
+npm --prefix frontend install
 ```
 
----
+### 2. Environment Configuration
 
-### 2. Configure Backend Server
+Copy `.env.example` to `.env`:
 
 ```bash
-cd backend
-npm install
+cp .env.example .env
 ```
 
-Create a `.env` file in `backend/`:
+Ensure `.env` contains:
 
 ```env
-PORT=3001
 NODE_ENV=development
-GROQ_API_KEY=your_groq_api_key_here
-PISTON_API_URL=https://emkc.org/api/v2/piston
-ALGORAND_ALGOD_SERVER=https://testnet-api.algonode.cloud
-ALGORAND_ALGOD_PORT=443
+PORT=3001
 DEV_BYPASS_PAYMENT=true
+ALGORAND_NETWORK=testnet
+ALGORAND_API_URL=https://testnet-api.algonode.cloud
+USDC_ASSET_ID=31566704
+ALGORAND_SERVICE_ADDRESS=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+REQUIRED_PAYMENT_AMOUNT=0.001
+GROQ_API_KEY=your_groq_api_key
+PISTON_URL=https://emkc.org/api/v2/piston
+MAX_SOURCE_CODE_BYTES=100000
+BENCHMARK_WARMUP_RUNS=3
+BENCHMARK_MEASUREMENT_RUNS=10
 ```
 
-Start the backend API server:
-
-```bash
-npm run dev
-```
-The Express server will start on `http://localhost:3001`.
-
----
-
-### 3. Configure Frontend Application
-
-In a new terminal window, navigate to `frontend/`:
-
-```bash
-cd frontend
-npm install
-```
-
-Create a `.env.local` file in `frontend/`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_DEV_BYPASS_PAYMENT=true
-```
-
-Start the Next.js development server:
+### 3. Run Development Servers
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your desktop browser.
+- Backend API: `http://localhost:3001`
+- Frontend Web App: `http://localhost:3000`
 
 ---
 
-## 🛠️ API Reference
+## 🧪 Testing & Validation Commands
 
-### `POST /api/optimize`
-Submits source code for Groq LLM AST reduction and execution benchmarking.
+Run the full automated hardening verification test suite:
 
-**Request Body:**
-```json
-{
-  "code": "def bubble_sort(a): ...",
-  "language": "python",
-  "stdin": ""
-}
+```bash
+npx tsx backend/src/tests/hardening.test.ts
 ```
 
-**Response Payload:**
-```json
-{
-  "optimizedCode": "def quick_sort(a): ...",
-  "timeComplexity": { "original": "O(n²)", "optimized": "O(n log n)" },
-  "metrics": {
-    "originalTimeMs": 142.5,
-    "optimizedTimeMs": 12.8,
-    "improvementPct": 91.0
-  },
-  "optimizationConfidence": 98.8,
-  "reasoning": "Replaced O(n²) Bubble Sort with native O(n log n) Timsort routine..."
-}
+Run TypeScript compilation checks:
+
+```bash
+npm run build
 ```
-
-### `POST /api/execute`
-Executes raw code in isolated Piston sandboxes with optional stdin input.
-
-### `GET /api/history`
-Fetches persisted optimization records from Cloud Firestore.
-
----
-
-## 🎨 Theme System & Customization
-
-Optima AI features a dual theme engine powered by CSS variables (`var(--bg)`, `var(--primary)`, `var(--card)`):
-
-- **Dark Mode**: Deep navy canvas (`#07101A`), glowing cyan accents (`#2DD4BF`), dark code frames (`#111827`).
-- **Light Mode**: Warm off-white canvas (`#F7FAFC`), crisp dark navy headlines (`#0B1720`), deep rich teal accents (`#0D9488`), and light surface cards (`#FFFFFF`).
-
----
-
-## 📄 Prettier Code Formatting
-
-The source code editor includes built-in Prettier formatting via `frontend/lib/prettierFormatter.ts`. Click the **⚡ Prettier Format** button in the Workspace IDE header to format JavaScript, TypeScript, Python, or JSON source snippets according to [.prettierrc](file:///Users/sukrutdusane/Documents/Projects%20/Sy/SML-Code-Optimiser/frontend/.prettierrc).
 
 ---
 
 ## 📜 License
 
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-<p align="center">
-  <b>Optima AI</b> — Enterprise Autonomous Code Optimization Platform
-</p>
+Distributed under the MIT License. See `LICENSE` for more information.
