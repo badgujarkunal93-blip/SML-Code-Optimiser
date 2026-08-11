@@ -172,7 +172,7 @@ print("Count:", len(sorted_arr), "Min:", sorted_arr[0], "Max:", sorted_arr[-1])`
           </button>
           <Link
             href="/workspace"
-            className="bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] px-5 py-2 rounded-xl font-bold transition-all hover-scale shadow-md"
+            className="bg-[var(--primary)] hover:opacity-90 text-white dark:text-[#07101A] px-5 py-2 rounded-xl font-bold transition-all hover-scale shadow-md"
           >
             Open in IDE →
           </Link>

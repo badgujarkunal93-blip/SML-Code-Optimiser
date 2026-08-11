@@ -105,7 +105,7 @@ export default function LandingPage() {
               <div className="flex flex-wrap items-center gap-4 lg:gap-[20px] pt-2 lg:pt-3">
                 <Link
                   href="/workspace"
-                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[var(--primary)] hover:opacity-90 text-[#07101A] font-mono font-extrabold text-xs sm:text-sm shadow-lg shadow-[var(--primary)]/25 transition-all hover-scale flex items-center justify-center gap-2.5"
+                  className="h-[50px] sm:h-[56px] px-6 sm:px-8 rounded-[18px] bg-[var(--primary)] hover:opacity-90 text-white dark:text-[#07101A] font-mono font-extrabold text-xs sm:text-sm shadow-lg shadow-[var(--primary)]/25 transition-all hover-scale flex items-center justify-center gap-2.5"
                 >
                   <span>Launch Workspace IDE</span>
                   <span className="material-symbols-outlined text-lg">east</span>
@@ -290,7 +290,7 @@ export default function LandingPage() {
         <div>
           <Link
             href="/workspace"
-            className="inline-flex items-center gap-2 bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-mono font-bold text-sm px-9 py-4 rounded-full shadow-lg shadow-[#2DD4BF]/25 transition-all hover-scale"
+            className="inline-flex items-center gap-2 bg-[var(--primary)] hover:opacity-90 text-white dark:text-[#07101A] font-mono font-bold text-sm px-9 py-4 rounded-full shadow-lg shadow-[var(--primary)]/25 transition-all hover-scale"
           >
             <span>Launch Workspace IDE</span>
             <span className="material-symbols-outlined text-lg">east</span>

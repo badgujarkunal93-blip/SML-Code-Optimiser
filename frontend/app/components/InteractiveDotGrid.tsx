@@ -90,7 +90,7 @@ export function InteractiveDotGrid() {
       parallax.x += (parallax.targetX - parallax.x) * 0.05;
       parallax.y += (parallax.targetY - parallax.y) * 0.05;
 
-      const isLight = document.documentElement.classList.contains("light");
+      const isLight = !document.documentElement.classList.contains("dark");
 
       // Draw Radial Gradient Glow behind hero
       const heroGlowGrad = ctx.createRadialGradient(

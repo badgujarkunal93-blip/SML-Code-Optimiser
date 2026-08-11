@@ -329,9 +329,9 @@ export function Hero3DTerminal({ onHoverChange }: Hero3DTerminalProps) {
                         <span
                           className={`font-bold px-1.5 py-0.5 rounded-sm ml-1 ${
                             log.type === "warn"
-                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              ? "bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30"
                               : log.type === "success"
-                              ? "bg-emerald-500/10 text-[#34D399] border border-emerald-500/20"
+                              ? "bg-emerald-500/15 text-emerald-800 dark:text-[#34D399] border border-emerald-500/30"
                               : "bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20"
                           }`}
                         >
@@ -344,7 +344,7 @@ export function Hero3DTerminal({ onHoverChange }: Hero3DTerminalProps) {
 
                 {/* Fallback if list is empty */}
                 {displayedLogs.length === 0 && (
-                  <div className="text-sky-400 font-semibold animate-pulse">
+                  <div className="text-sky-600 dark:text-sky-400 font-semibold animate-pulse">
                     &gt; Initializing Optima AI Compiler Pipeline...
                   </div>
                 )}

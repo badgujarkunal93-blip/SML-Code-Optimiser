@@ -270,12 +270,12 @@ export default function WorkspacePage() {
   return (
     <div className="space-y-6 w-full relative">
       {/* 🛠️ TOP TOOLBAR (Cursor IDE Style) */}
-      <div className="glass-panel p-4 rounded-2xl border border-[#3c4a46]/30 flex flex-wrap items-center justify-between gap-4 shadow-xl font-mono text-xs">
+      <div className="glass-panel p-4 rounded-2xl border border-[var(--border)] flex flex-wrap items-center justify-between gap-4 shadow-xl font-mono text-xs">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-            <span className="font-bold text-white">{activeInputLang.toUpperCase()}</span>
-            <span className="text-[#bacac5] text-[10px]">({detected.confidence}% Confidence)</span>
+            <span className="font-bold text-[var(--text-primary)]">{activeInputLang.toUpperCase()}</span>
+            <span className="text-[var(--text-secondary)] text-[10px]">({detected.confidence}% Confidence)</span>
           </div>
 
           <div className="flex items-center gap-2 border-l border-[var(--border)] pl-4">
@@ -312,7 +312,7 @@ export default function WorkspacePage() {
 
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap shrink-0">
           {isDevBypass ? (
-            <span className="h-[40px] px-4 rounded-xl text-[10px] text-sky-400 bg-sky-500/10 border border-sky-500/30 font-semibold font-mono flex items-center justify-center whitespace-nowrap">
+            <span className="h-[40px] px-4 rounded-xl text-[10px] text-sky-600 dark:text-sky-400 bg-sky-500/10 border border-sky-500/30 font-semibold font-mono flex items-center justify-center whitespace-nowrap">
               Dev Mode Bypass ✓
             </span>
           ) : walletAddress ? (
@@ -341,7 +341,7 @@ export default function WorkspacePage() {
           <button
             onClick={handleOptimize}
             disabled={loading || !code.trim()}
-            className="h-[40px] px-5 sm:px-6 rounded-xl bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-extrabold font-mono text-xs shadow-md shadow-[#2DD4BF]/20 transition-all hover-scale flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
+            className="h-[40px] px-5 sm:px-6 rounded-xl bg-[var(--primary)] hover:opacity-90 text-white dark:text-[#07101A] font-extrabold font-mono text-xs shadow-md shadow-[var(--primary)]/20 transition-all hover-scale flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-base leading-none">auto_awesome</span>
             <span>{loading ? "Optimizing..." : "Optimize Code"}</span>

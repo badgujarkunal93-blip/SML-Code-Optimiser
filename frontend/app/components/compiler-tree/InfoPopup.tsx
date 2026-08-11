@@ -105,7 +105,7 @@ export function InfoPopup({ info, isOpen, onClose }: InfoPopupProps) {
             <div className="pt-2">
               <button
                 onClick={onClose}
-                className="w-full bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-mono font-bold text-xs py-2.5 rounded-xl shadow-lg transition-colors"
+                className="w-full bg-[var(--primary)] hover:opacity-90 text-white dark:text-[#07101A] font-mono font-bold text-xs py-2.5 rounded-xl shadow-lg transition-colors"
               >
                 Close Architecture Detail
               </button>

@@ -137,7 +137,7 @@ export default function HistoryPage() {
             <p className="text-[var(--text-secondary)] text-xs">No history records found.</p>
             <Link
               href="/workspace"
-              className="inline-block text-xs font-bold text-[#07101A] bg-[#2DD4BF] hover:bg-[#57f1db] px-5 py-2 rounded-lg"
+              className="inline-block text-xs font-bold text-white dark:text-[#07101A] bg-[var(--primary)] hover:opacity-90 px-5 py-2 rounded-lg"
             >
               Run First Optimization →
             </Link>

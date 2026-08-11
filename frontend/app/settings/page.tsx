@@ -27,7 +27,7 @@ export default function SettingsPage() {
 
         <button
           onClick={handleSave}
-          className="bg-[#2DD4BF] hover:bg-[#57f1db] text-[#07101A] font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-[#2DD4BF]/20 transition-all hover-scale"
+          className="bg-[var(--primary)] hover:opacity-90 text-white dark:text-[#07101A] font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-[var(--primary)]/20 transition-all hover-scale"
         >
           {saved ? "Saved ✓" : "Save Changes"}
         </button>

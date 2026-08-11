@@ -1,30 +1,6 @@
 @import "tailwindcss";
 
-:root, html.dark {
-  --primary: #2DD4BF;
-  --bg: #07101A;
-  --bg-secondary: #0F172A;
-  --card: #111827;
-  --card-elevated: #182234;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(45, 212, 191, 0.35);
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --success: #34D399;
-  --warning: #FBBF24;
-  --error: #EF4444;
-  --shadow-color: rgba(0, 0, 0, 0.5);
-  --dot-color: rgba(45, 212, 191, 0.18);
-  --hero-title-primary: #F8FAFC;
-  --hero-title-accent-from: #2DD4BF;
-  --hero-title-accent-to: #57F1DB;
-  --terminal-bg: #111827;
-  --terminal-header: #0F172A;
-  --terminal-border: rgba(45, 212, 191, 0.6);
-}
-
-html.light {
+:root, html.light {
   --primary: #0D9488;
   --bg: #F7FAFC;
   --bg-secondary: #EEF4F7;
@@ -46,6 +22,48 @@ html.light {
   --terminal-bg: #FFFFFF;
   --terminal-header: #F1F5F9;
   --terminal-border: #99D8D0;
+
+  /* Standard Theme Aliases */
+  --background: var(--bg);
+  --foreground: var(--text-primary);
+  --card-foreground: var(--text-primary);
+  --muted: var(--card-elevated);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--primary);
+  --accent-foreground: #FFFFFF;
+}
+
+html.dark {
+  --primary: #2DD4BF;
+  --bg: #07101A;
+  --bg-secondary: #0F172A;
+  --card: #111827;
+  --card-elevated: #182234;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(45, 212, 191, 0.35);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #EF4444;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --dot-color: rgba(45, 212, 191, 0.18);
+  --hero-title-primary: #F8FAFC;
+  --hero-title-accent-from: #2DD4BF;
+  --hero-title-accent-to: #57F1DB;
+  --terminal-bg: #111827;
+  --terminal-header: #0F172A;
+  --terminal-border: rgba(45, 212, 191, 0.6);
+
+  /* Standard Theme Aliases */
+  --background: var(--bg);
+  --foreground: var(--text-primary);
+  --card-foreground: var(--text-primary);
+  --muted: var(--card-elevated);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--primary);
+  --accent-foreground: #07101A;
 }
 
 body {

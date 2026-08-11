@@ -143,7 +143,7 @@ export default function DashboardPage() {
             <p className="text-[var(--text-secondary)] text-xs">No optimization history found in database.</p>
             <Link
               href="/"
-              className="inline-block text-xs font-bold text-[#07101A] bg-[#2DD4BF] hover:bg-[#57f1db] px-5 py-2 rounded-lg transition-all hover-scale"
+              className="inline-block text-xs font-bold text-white dark:text-[#07101A] bg-[var(--primary)] hover:opacity-90 px-5 py-2 rounded-lg transition-all hover-scale"
             >
               Run Your First Optimization →
             </Link>
