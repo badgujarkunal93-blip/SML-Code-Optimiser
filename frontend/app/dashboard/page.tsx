@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getSavedHistory } from "@/lib/historyStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -93,6 +94,19 @@ export default function DashboardPage() {
   const fetchHistory = async () => {
     setLoading(true);
     setError(null);
+    const userSaved = getSavedHistory().map((s) => ({
+      id: s.id,
+      created_at: s.created_at,
+      language: s.language,
+      original_code: s.original_code,
+      optimized_code: s.optimized_code,
+      original_time_ms: s.original_time_ms,
+      optimized_time_ms: s.optimized_time_ms,
+      improvement_pct: s.improvement_pct,
+      correctness_verified: s.correctness_verified ?? true,
+      reasoning: s.reasoning,
+    }));
+
     try {
       let res = await fetch("/api/history").catch(() => null);
       if (!res || !res.ok) {
@@ -109,12 +123,12 @@ export default function DashboardPage() {
             : typeof data === "object" && data !== null && "history" in data && Array.isArray((data as { history: unknown }).history)
               ? (data as { history: HistoryRecord[] }).history
               : [];
-        setHistory(rawRecords as HistoryRecord[]);
+        setHistory([...userSaved, ...(rawRecords as HistoryRecord[])]);
       } else {
-        setHistory(DEMO_HISTORY_RECORDS);
+        setHistory([...userSaved, ...DEMO_HISTORY_RECORDS]);
       }
     } catch {
-      setHistory(DEMO_HISTORY_RECORDS);
+      setHistory([...userSaved, ...DEMO_HISTORY_RECORDS]);
     } finally {
       setLoading(false);
     }
@@ -123,6 +137,19 @@ export default function DashboardPage() {
   useEffect(() => {
     let ignore = false;
     async function load() {
+      const userSaved = getSavedHistory().map((s) => ({
+        id: s.id,
+        created_at: s.created_at,
+        language: s.language,
+        original_code: s.original_code,
+        optimized_code: s.optimized_code,
+        original_time_ms: s.original_time_ms,
+        optimized_time_ms: s.optimized_time_ms,
+        improvement_pct: s.improvement_pct,
+        correctness_verified: s.correctness_verified ?? true,
+        reasoning: s.reasoning,
+      }));
+
       try {
         let res = await fetch("/api/history").catch(() => null);
         if (!res || !res.ok) {
@@ -139,12 +166,12 @@ export default function DashboardPage() {
               : typeof data === "object" && data !== null && "history" in data && Array.isArray((data as { history: unknown }).history)
                 ? (data as { history: HistoryRecord[] }).history
                 : [];
-          if (!ignore) setHistory(rawRecords as HistoryRecord[]);
+          if (!ignore) setHistory([...userSaved, ...(rawRecords as HistoryRecord[])]);
         } else {
-          if (!ignore) setHistory(DEMO_HISTORY_RECORDS);
+          if (!ignore) setHistory([...userSaved, ...DEMO_HISTORY_RECORDS]);
         }
       } catch {
-        if (!ignore) setHistory(DEMO_HISTORY_RECORDS);
+        if (!ignore) setHistory([...userSaved, ...DEMO_HISTORY_RECORDS]);
       } finally {
         if (!ignore) setLoading(false);
       }

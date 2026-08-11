@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { saveCodeToHistory, setActiveWorkspaceCode } from "@/lib/historyStore";
 
 export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
@@ -144,6 +145,26 @@ print("Count:", len(sorted_arr), "Min:", sorted_arr[0], "Max:", sorted_arr[-1])`
     },
   ];
 
+  const handleSaveToHistory = () => {
+    saveCodeToHistory({
+      language: reportData.language.toLowerCase().includes("python") ? "python" : reportData.language.toLowerCase(),
+      original_code: reportData.originalCode,
+      optimized_code: reportData.optimizedCode,
+      original_time_ms: reportData.originalTimeMs,
+      optimized_time_ms: reportData.optimizedTimeMs,
+      improvement_pct: reportData.runtimeSavedPct,
+      correctness_verified: true,
+      reasoning: reportData.reasoning,
+      mode: reportData.mode,
+    });
+    setDownloadSuccess("Report & Code saved to History! You can access it anytime.");
+    setTimeout(() => setDownloadSuccess(null), 3000);
+  };
+
+  const handleOpenInIDE = () => {
+    setActiveWorkspaceCode(reportData.originalCode, reportData.language);
+  };
+
   return (
     <div className="space-y-8 w-full max-w-[1440px] mx-auto font-mono text-xs pb-16">
       
@@ -165,13 +186,23 @@ print("Count:", len(sorted_arr), "Min:", sorted_arr[0], "Max:", sorted_arr[-1])`
 
         <div className="flex flex-wrap gap-3">
           <button
+            onClick={handleSaveToHistory}
+            className="bg-[var(--card-elevated)] hover:bg-[var(--card)] text-[var(--primary)] px-4 py-2 rounded-xl border border-[var(--primary)]/30 font-bold transition-all hover-scale flex items-center gap-1.5"
+            title="Save report to user history"
+          >
+            <span>💾 Save to History</span>
+          </button>
+
+          <button
             onClick={handleCopyCode}
             className="bg-[var(--bg-secondary)] hover:bg-[var(--card-elevated)] text-[var(--primary)] px-4 py-2 rounded-xl border border-[var(--primary)]/30 font-bold transition-all hover-scale"
           >
-            {copied ? "Copied ✓" : "📋 Copy Optimized Code"}
+            {copied ? "Copied ✓" : "📋 Copy Code"}
           </button>
+
           <Link
             href="/workspace"
+            onClick={handleOpenInIDE}
             className="bg-[var(--primary)] hover:opacity-90 text-white dark:text-[#07101A] px-5 py-2 rounded-xl font-bold transition-all hover-scale shadow-md"
           >
             Open in IDE →

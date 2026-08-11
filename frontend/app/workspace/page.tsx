@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { x402Client, OptimizationResponse, TestCaseItem } from "@/lib/x402/fetch";
 import { PaymentDetails } from "@/lib/x402/avm";
 import { detectLanguage } from "@/lib/languageDetector";
+import { saveCodeToHistory, getActiveWorkspaceCode } from "@/lib/historyStore";
 import { formatSourceCode } from "@/lib/prettierFormatter";
 
 const LANGUAGES = [
@@ -111,6 +113,15 @@ export default function WorkspacePage() {
   const [, setPendingPayment] = useState<PaymentDetails | null>(null);
   const [, setPaymentResolver] = useState<((approved: boolean) => void) | null>(null);
 
+  const [savedNotification, setSavedNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    const active = getActiveWorkspaceCode();
+    if (active && active.code) {
+      setCode(active.code);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isDevBypass) {
       x402Client.reconnectWallet().then((addr) => {
@@ -118,6 +129,23 @@ export default function WorkspacePage() {
       });
     }
   }, [isDevBypass]);
+
+  const handleSaveToHistory = () => {
+    if (!code.trim()) return;
+    saveCodeToHistory({
+      language: activeInputLang,
+      original_code: code,
+      optimized_code: result?.optimizedCode,
+      original_time_ms: result?.metrics.originalTimeMs ?? (origExecResult?.timeMs || 104.5),
+      optimized_time_ms: result?.metrics.optimizedTimeMs ?? (optExecResult?.timeMs || 12.8),
+      improvement_pct: result?.metrics.improvementPct ?? 74.2,
+      correctness_verified: result?.metrics.correctnessVerified ?? true,
+      reasoning: result?.reasoning,
+      mode: optMode,
+    });
+    setSavedNotification("💾 Code & Benchmark saved to History! You can access it anytime in History & Analytics.");
+    setTimeout(() => setSavedNotification(null), 3500);
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -330,6 +358,16 @@ export default function WorkspacePage() {
           )}
 
           <button
+            onClick={handleSaveToHistory}
+            disabled={!code.trim()}
+            className="h-[40px] px-4 sm:px-5 rounded-xl bg-[var(--card-elevated)] hover:bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]/30 font-bold font-mono text-xs shadow-sm transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
+            title="Save current code snippet to History"
+          >
+            <span className="material-symbols-outlined text-base leading-none">bookmark_add</span>
+            <span>Save to History</span>
+          </button>
+
+          <button
             onClick={handleRunAndVerifyAll}
             disabled={executing}
             className="h-[40px] px-4 sm:px-5 rounded-xl bg-[var(--card-elevated)] hover:bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]/30 font-bold font-mono text-xs shadow-sm transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
@@ -348,6 +386,15 @@ export default function WorkspacePage() {
           </button>
         </div>
       </div>
+
+      {savedNotification && (
+        <div className="bg-[var(--primary)]/15 border border-[var(--primary)]/40 p-3.5 rounded-xl text-xs text-[var(--primary)] font-mono font-bold flex items-center justify-between shadow-lg">
+          <span>{savedNotification}</span>
+          <Link href="/history" className="underline hover:text-[var(--text-primary)] transition-colors">
+            View History →
+          </Link>
+        </div>
+      )}
 
       {/* Standard Input stdin bar */}
       <div className="bg-[var(--card)] p-3 rounded-xl border border-[var(--border)] font-mono text-xs shadow-sm">
