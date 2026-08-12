@@ -34,7 +34,7 @@ async def optimize_code_endpoint(payload: OptimizeRequest):
             detail=f"Payload Too Large: Source code exceeds maximum allowed size ({MAX_SOURCE_CODE_BYTES} bytes)."
         )
 
-    if not payload.code or not payload.code.trim():
+    if not payload.code or not payload.code.strip():
         raise HTTPException(
             status_code=400,
             detail="Syntax Error: Source code input cannot be empty."
