@@ -285,21 +285,38 @@ export default function DashboardPage() {
                         : "N/A"}
                     </td>
                     <td className="px-6 py-4">
-                      {item.correctness_verified && item.improvement_pct !== null && item.improvement_pct !== undefined ? (
-                        item.improvement_pct >= 0 ? (
-                          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30">
-                            +{item.improvement_pct}%
+                      {(() => {
+                        let pct = item.improvement_pct;
+                        if ((pct === null || pct === undefined) && item.original_time_ms && item.optimized_time_ms) {
+                          pct = Math.round(((item.original_time_ms - item.optimized_time_ms) / item.original_time_ms) * 1000) / 10;
+                        }
+                        if (pct !== null && pct !== undefined) {
+                          if (pct > 0) {
+                            return (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30">
+                                +{pct}%
+                              </span>
+                            );
+                          } else if (pct === 0) {
+                            return (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/30">
+                                0.0%
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                                {pct}%
+                              </span>
+                            );
+                          }
+                        }
+                        return (
+                          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                            Benchmark Failed
                           </span>
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                            {item.improvement_pct}%
-                          </span>
-                        )
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                          Benchmark Failed
-                        </span>
-                      )}
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       {item.correctness_verified ? (
