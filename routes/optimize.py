@@ -16,7 +16,7 @@ router = APIRouter(prefix="/optimize", tags=["Optimize"])
 
 
 @router.post("", response_model=OptimizeResponse)
-async def optimize_code_endpoint(payload: OptimizeRequest):
+async def optimize_code_endpoint(payload: OptimizeRequest) -> OptimizeResponse:
     """
     POST /optimize endpoint.
     Hardened optimization pipeline with validation, syntax checks, multi-case verification,
