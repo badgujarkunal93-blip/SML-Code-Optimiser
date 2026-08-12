@@ -1,8 +1,8 @@
 import { avmWalletManager, PaymentDetails } from './avm'
 import { API_BASE_URL } from '../apiConfig'
 
-// Default request timeout (30 seconds)
-const REQUEST_TIMEOUT_MS = 30_000
+// Default request timeout (60 seconds for Render free tier cold starts)
+const REQUEST_TIMEOUT_MS = 60_000
 
 export interface OptimizationRequest {
   code: string
@@ -141,7 +141,7 @@ async function fetchWithTimeout(
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw new Error(
-        'Backend request timed out. The server may be unavailable or overloaded. Please try again.'
+        'Backend request timed out. Free hosting platforms (like Render) take 45–60 seconds to wake up from cold start. Please try clicking again now that the server is awake.'
       )
     }
 
