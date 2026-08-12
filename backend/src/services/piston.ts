@@ -31,6 +31,8 @@ export interface BenchmarkMetrics {
 }
 
 const SUPPORTED_LANGUAGES: Record<string, { canonical: string; defaultVersion: string }> = {
+  teal: { canonical: 'python', defaultVersion: '3.10.0' },
+  pyteal: { canonical: 'python', defaultVersion: '3.10.0' },
   python: { canonical: 'python', defaultVersion: '3.10.0' },
   py: { canonical: 'python', defaultVersion: '3.10.0' },
   javascript: { canonical: 'javascript', defaultVersion: '18.15.0' },

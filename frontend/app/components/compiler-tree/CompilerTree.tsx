@@ -8,6 +8,39 @@ import { AnimatedConnection } from "./AnimatedConnection";
 import { InfoPopup, LanguageInfo } from "./InfoPopup";
 
 const LANGUAGE_DATA: LanguageInfo[] = [
+  // Smart Contracts & AVM Engine
+  {
+    id: "teal",
+    name: "TEAL",
+    category: "Smart Contract",
+    compiler: "Algorand AVM 10",
+    executionEngine: "AVM Bytecode Sandbox",
+    typicalSpeed: "+74.2% opcode gain",
+    memoryRating: "AVM Stack",
+    aiConfidence: 99,
+    optimizationSupport: "Redundant opcode pruning & stack depth optimization",
+    outputFormats: ["TEAL Assembly", "AVM Bytecode"],
+    benchmarkSupport: "AVM Execution & Algorand x402 Settlement",
+    strategy: "Prune redundant stack pushes/pops, inline constant bytes, and optimize conditional branching opcodes.",
+    ext: "teal",
+    icon: "⚙️",
+  },
+  {
+    id: "pyteal",
+    name: "PyTeal",
+    category: "Smart Contract",
+    compiler: "PyTeal -> TEAL Compiler",
+    executionEngine: "PyTeal AST & AVM Sandbox",
+    typicalSpeed: "+68% gas reduction",
+    memoryRating: "AVM State",
+    aiConfidence: 98,
+    optimizationSupport: "PyTeal Expression AST simplification",
+    outputFormats: ["Compiled TEAL", "PyTeal Expression Graph"],
+    benchmarkSupport: "Algorand x402 Micropayment Verified",
+    strategy: "Simplify PyTeal Seq([]) blocks and eliminate dead conditional branches before compiling to TEAL assembly.",
+    ext: "py",
+    icon: "🅰️",
+  },
   // Runtime Engine
   {
     id: "python",

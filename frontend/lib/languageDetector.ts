@@ -19,6 +19,8 @@ export function detectLanguage(code: string): DetectionResult {
   }
 
   const scores: Record<string, number> = {
+    teal: 0,
+    pyteal: 0,
     python: 0,
     javascript: 0,
     typescript: 0,
@@ -35,6 +37,14 @@ export function detectLanguage(code: string): DetectionResult {
     sql: 0,
     bash: 0,
   };
+
+  // TEAL patterns
+  if (/#pragma\s+version\s+\d+/.test(text)) scores.teal += 70;
+  if (/\b(txn|global|gtxn|itxn|app_global_get|app_local_get|btoi|itob|pop|dup|assert)\b/.test(text)) scores.teal += 45;
+
+  // PyTeal patterns
+  if (/\bfrom\s+pyteal\s+import\b|\bimport\s+pyteal\b/.test(text)) scores.pyteal += 75;
+  if (/\b(Txn\.|Global\.|App\.|Seq\(|Int\(|Bytes\(|Cond\()/ .test(text)) scores.pyteal += 50;
 
   // Python patterns
   if (/\bdef\s+[a-zA-Z_]\w*\s*\(/.test(text)) scores.python += 35;
@@ -132,6 +142,8 @@ export function detectLanguage(code: string): DetectionResult {
   const confidence = Math.min(99, Math.max(75, maxScore > 0 ? Math.round(Math.min(100, maxScore * 1.4)) : 80));
 
   const metadataMap: Record<string, { formatter: string; compiler: string; runtime: string }> = {
+    teal: { formatter: "teal-fmt", compiler: "Algorand AVM 10 (TEAL)", runtime: "AVM Sandbox / Algorand Node" },
+    pyteal: { formatter: "Black (PEP8)", compiler: "PyTeal -> TEAL Compiler", runtime: "AVM Sandbox / CPython" },
     python: { formatter: "Black (PEP8)", compiler: "Python 3.11", runtime: "CPython" },
     javascript: { formatter: "Prettier", compiler: "V8 Engine", runtime: "Node.js 20" },
     typescript: { formatter: "Prettier (TS)", compiler: "tsc (TypeScript 5)", runtime: "Node.js 20" },

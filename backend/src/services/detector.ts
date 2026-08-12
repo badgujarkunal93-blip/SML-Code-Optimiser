@@ -20,8 +20,20 @@ export function detectLanguage(code: string): LanguageDetectionResult {
   let confidence = 75;
   const features: string[] = [];
 
+  // TEAL patterns
+  if (/#pragma\s+version\s+\d+/.test(cleanCode) || /\b(txn|global|gtxn|itxn|app_global_get)\b/.test(cleanCode)) {
+    language = "teal";
+    confidence = 99;
+    features.push("TEAL pragma/AVM opcode syntax");
+  }
+  // PyTeal patterns
+  else if (/from\s+pyteal\s+import|import\s+pyteal|Txn\.|Global\./.test(cleanCode)) {
+    language = "pyteal";
+    confidence = 99;
+    features.push("PyTeal contract SDK syntax");
+  }
   // Python patterns
-  if (
+  else if (
     /def\s+\w+\s*\(/.test(cleanCode) ||
     /import\s+\w+|from\s+\w+\s+import/.test(cleanCode) ||
     /print\s*\(/.test(cleanCode) ||

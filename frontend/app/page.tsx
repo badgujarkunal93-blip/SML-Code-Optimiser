@@ -9,53 +9,53 @@ import { ArchitectureSection } from "@/app/components/compiler-tree/Architecture
 import { WorkflowSection } from "@/app/components/WorkflowSection";
 
 const WORKFLOW_STEPS = [
-  { id: "01", name: "Input Code", icon: "code", desc: "Paste source code in any supported programming language" },
-  { id: "02", name: "AI Analysis", icon: "psychology", desc: "Groq Llama 3.3 70B AST & Control Flow Graph analysis" },
-  { id: "03", name: "Optimization", icon: "auto_awesome", desc: "Algorithmic & memory footprint refactoring" },
-  { id: "04", name: "Benchmark", icon: "speed", desc: "Piston multi-runtime wall-clock performance run" },
-  { id: "05", name: "Verification", icon: "verified", desc: "Output & boundary test suite equivalence check" },
-  { id: "06", name: "Blockchain Receipt", icon: "receipt_long", desc: "Algorand x402 micropayment transaction log" },
-  { id: "07", name: "Execution Console", icon: "terminal", desc: "Verified result execution console & metrics report" },
+  { id: "01", name: "Input Contract / Code", icon: "code", desc: "Paste TEAL, PyTeal or supported source code" },
+  { id: "02", name: "SLM & AI Analysis", icon: "psychology", desc: "Lightweight SLM opcode smell & AST control flow analysis" },
+  { id: "03", name: "Optimization Engine", icon: "auto_awesome", desc: "Redundant opcode pruning & memory footprint reduction" },
+  { id: "04", name: "Benchmark Execution", icon: "speed", desc: "Piston multi-runtime wall-clock performance & opcode audit" },
+  { id: "05", name: "Equivalence Verification", icon: "verified", desc: "Multi-case output & boundary test suite check" },
+  { id: "06", name: "Algorand x402 Receipt", icon: "receipt_long", desc: "0.001 USDC micro-payment settlement on Algorand Testnet" },
+  { id: "07", name: "Execution Console", icon: "terminal", desc: "Verified result execution console & transaction receipt" },
 ];
 
 const FEATURES = [
   {
-    title: "⚡ Benchmark Engine",
-    desc: "Executes original vs optimized code in real-time sandboxes via Piston API to calculate wall-clock millisecond speedup.",
-    icon: "bolt",
+    title: "📜 TEAL & PyTeal Optimizer",
+    desc: "Analyzes AVM opcodes and PyTeal expressions to eliminate redundant stack operations and minimize contract execution costs.",
+    icon: "description",
   },
   {
-    title: "🧠 AI AST Optimization",
-    desc: "Powered by Groq Llama-3.3-70B to refactor O(n²) bottlenecks into O(n) or O(1) production-grade solutions.",
+    title: "🧠 SLM & AI Analysis Engine",
+    desc: "Combines lightweight SLM code smell detection with deep AI reasoning to refactor O(n²) bottlenecks into O(n) solutions.",
     icon: "smart_toy",
   },
   {
-    title: "🔄 Language Conversion",
-    desc: "Seamlessly cross-compile and refactor Python to Rust, JavaScript to Go, or C++ to TypeScript.",
-    icon: "translate",
-  },
-  {
-    title: "🧪 Execution Sandbox",
-    desc: "Isolated multi-runtime environment with custom stdin support and AI-generated boundary test suites.",
-    icon: "terminal",
-  },
-  {
-    title: "🔒 Algorand x402 Settlement",
-    desc: "Decentralized micro-payment challenge & response protocol verified over Algorand testnet via Plausible facilitator.",
+    title: "🔒 Algorand x402 Micropayment",
+    desc: "Pay-per-use micro-settlement protocol (0.001 USDC) verified on Algorand Testnet via Plausible facilitator.",
     icon: "token",
   },
   {
-    title: "📊 History & Analytics",
-    desc: "Cloud Firestore persistence logging execution benchmarks, memory drops, and transaction hashes.",
+    title: "⚡ Wall-Clock Benchmark Engine",
+    desc: "Executes original vs optimized code in real-time sandboxes to measure wall-clock speedups.",
+    icon: "bolt",
+  },
+  {
+    title: "🧪 Equivalence Verification",
+    desc: "Multi-case testing suite ensuring optimized code preserves exact input-output behavior.",
+    icon: "terminal",
+  },
+  {
+    title: "📊 History & Explorer Proof",
+    desc: "Logs benchmark metrics and cryptographically links Algorand Testnet transaction hashes.",
     icon: "bar_chart",
   },
 ];
 
 const METRICS = [
-  { label: "Average Wall-Clock Speedup", value: "+74.2%", sub: "Audited across 10,000+ benchmark runs" },
-  { label: "Algorand Settlement Latency", value: "3.2s", sub: "Verified via Plausible x402 facilitator" },
-  { label: "AI AST Reduction Confidence", value: "98.8%", sub: "Strict output equivalence verification" },
-  { label: "Supported Runtimes", value: "10+", sub: "GCC, Clang, Rustc, PyPy, Node.js, JVM" },
+  { label: "Average Opcode & Runtime Speedup", value: "+74.2%", sub: "Verified across benchmark suites" },
+  { label: "Pay-Per-Use Pricing", value: "0.001 USDC", sub: "Algorand Testnet x402 Micro-Settlement" },
+  { label: "Equivalence Verification", value: "100%", sub: "Multi-case output equivalence check" },
+  { label: "Supported Languages & AVM", value: "TEAL / PyTeal + 8", sub: "Algorand AVM, Python, Rust, TS, C++, Go" },
 ];
 
 const TESTIMONIALS = [
@@ -92,14 +92,14 @@ export default function LandingPage() {
                     : "drop-shadow-none"
                 }`}
               >
-                <span className="text-[var(--hero-title-primary)] block">Optimize Code.</span>
+                <span className="text-[var(--hero-title-primary)] block">Optimize Smart Contracts.</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--hero-title-accent-from)] to-[var(--hero-title-accent-to)] block">
                   Not Just Syntax.
                 </span>
               </h1>
 
               <p className="text-xs sm:text-sm lg:text-base text-[var(--text-secondary)] leading-[1.7] max-w-[560px]">
-                AI-powered code optimization that analyzes your codebase, eliminates bottlenecks, and validates real performance gains through automated execution and benchmarking.
+                AI-powered TEAL & PyTeal smart contract optimization with verified execution performance gains, behavioral equivalence checks, and pay-per-use x402 micro-settlements on Algorand.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 lg:gap-[20px] pt-2 lg:pt-3">
@@ -151,6 +151,42 @@ export default function LandingPage() {
             <div className="text-[11px] text-[var(--text-muted)] font-mono">{metric.sub}</div>
           </motion.div>
         ))}
+      </section>
+
+      {/* 💳 PAY-PER-USE & COMPLIANCE VALUE SECTION */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="glass-panel p-6 rounded-2xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold font-mono text-[var(--primary)] uppercase tracking-wider">
+            <span className="material-symbols-outlined text-base">payments</span>
+            Pay-Per-Use Model
+          </div>
+          <div className="text-2xl font-black text-[var(--text-primary)] font-mono">0.001 USDC <span className="text-xs font-normal text-[var(--text-secondary)]">/ request</span></div>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+            Zero subscription. Zero monthly commitments. Pay only when an optimization report is requested.
+          </p>
+        </div>
+
+        <div className="glass-panel p-6 rounded-2xl border border-[var(--border)] space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold font-mono text-[var(--primary)] uppercase tracking-wider">
+            <span className="material-symbols-outlined text-base">person</span>
+            Target Users
+          </div>
+          <div className="text-base font-bold text-[var(--text-primary)] font-mono">Smart Contract & Web3 Devs</div>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+            Built for Algorand AVM developers optimizing TEAL & PyTeal contracts for minimal execution costs.
+          </p>
+        </div>
+
+        <div className="glass-panel p-6 rounded-2xl border border-[var(--border)] space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold font-mono text-[var(--primary)] uppercase tracking-wider">
+            <span className="material-symbols-outlined text-base">verified</span>
+            Algorand Settlement
+          </div>
+          <div className="text-base font-bold text-[var(--text-primary)] font-mono">Algorand Testnet & x402</div>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+            Cryptographic 402 challenge-response settlement verified via Plausible facilitator on Algorand Testnet.
+          </p>
+        </div>
       </section>
 
       {/* 🔄 WORKFLOW SECTION (Horizontal Animated Pipeline) */}

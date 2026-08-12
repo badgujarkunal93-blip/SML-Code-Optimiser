@@ -9,7 +9,26 @@
 [![Piston API](https://img.shields.io/badge/Sandbox-Piston_v2-green?style=flat-square)](https://github.com/engineer-man/piston)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](LICENSE)
 
-**Optima AI** is a hardened, autonomous code optimization and performance auditing platform. Powered by Groq Llama-3.3 70B LLM AST reduction, multi-runtime Piston execution sandboxes, and the Algorand x402 micropayment settlement protocol, Optima AI analyzes codebases, eliminates algorithmic bottlenecks, performs empirical behavioral equivalence testing, and calculates statistically robust median speedups across multi-run benchmarks.
+**Optima AI** is a hardened, autonomous smart contract and code optimization platform designed for **AlgoVerse 2026 (PS0406 — SLM-Powered Code Optimizer)**. Powered by lightweight SLM code smell analysis, Groq AI AST reduction, multi-runtime Piston execution sandboxes, and the Algorand x402 micropayment settlement protocol, Optima AI analyzes TEAL, PyTeal, and multi-language codebases, eliminates algorithmic and opcode bottlenecks, performs empirical behavioral equivalence testing, and calculates wall-clock speedups.
+
+---
+
+## 🏆 AlgoVerse 2026 Hackathon Demo Flow (PS0406)
+
+```
+1. Select TEAL / PyTeal Smart Contract Code
+2. SLM Code Smell & Opcode Candidate Analysis
+3. AI Code Transformation & Opcode Reduction
+4. Isolated Piston Sandbox Multi-Run Benchmarking
+5. Behavioral Equivalence Multi-Case Test Suite Verification
+6. HTTP 402 Payment Challenge Issued (0.001 USDC)
+7. Client Sign via Pera Wallet / Algorand Testnet
+8. Automatic Request Retry with Payment Transaction ID
+9. Plausible Facilitator & Algorand Node Verification
+10. Algorand Testnet Transaction Settlement Confirmed
+11. Real-Time Performance Improvement & Speedup Report
+12. Cryptographic Transaction Receipt & Explorer Link
+```
 
 ---
 

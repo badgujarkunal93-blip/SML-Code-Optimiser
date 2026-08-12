@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export interface LanguageInfo {
   id: string;
   name: string;
-  category: "Runtime" | "Compiler" | "JVM";
+  category: "Runtime" | "Compiler" | "JVM" | "Smart Contract";
   compiler: string;
   executionEngine: string;
   typicalSpeed: string;

@@ -9,6 +9,8 @@ import { saveCodeToHistory, getActiveWorkspaceCode } from "@/lib/historyStore";
 import { formatSourceCode } from "@/lib/prettierFormatter";
 
 const LANGUAGES = [
+  { id: "teal", name: "TEAL (Algorand AVM)", ext: "teal" },
+  { id: "pyteal", name: "PyTeal (Algorand Contract)", ext: "py" },
   { id: "python", name: "Python 3", ext: "py" },
   { id: "javascript", name: "JavaScript (Node.js)", ext: "js" },
   { id: "typescript", name: "TypeScript", ext: "ts" },
