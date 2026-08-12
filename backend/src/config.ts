@@ -20,6 +20,7 @@ export const CONFIG = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '3001', 10),
   DEV_BYPASS_PAYMENT: process.env.DEV_BYPASS_PAYMENT === 'true',
+  FRONTEND_URL: process.env.FRONTEND_URL || '',
   ALGORAND: {
     NETWORK: process.env.ALGORAND_NETWORK || 'testnet',
     API_URL: process.env.ALGORAND_API_URL || 'https://testnet-api.algonode.cloud',

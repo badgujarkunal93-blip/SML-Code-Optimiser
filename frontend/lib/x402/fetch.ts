@@ -1,4 +1,8 @@
 import { avmWalletManager, PaymentDetails } from './avm'
+import { API_BASE_URL } from '../apiConfig'
+
+// Default request timeout (30 seconds)
+const REQUEST_TIMEOUT_MS = 30_000
 
 export interface OptimizationRequest {
   code: string
@@ -107,11 +111,91 @@ export interface X402PaymentError {
   requestId: string
 }
 
+/**
+ * Wraps a fetch call with an AbortController timeout.
+ * Returns a clear error message on timeout, network failure, or CORS issues.
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = REQUEST_TIMEOUT_MS
+): Promise<Response> {
+  if (!API_BASE_URL) {
+    throw new Error(
+      'Optima AI backend is not configured. ' +
+      (process.env.NODE_ENV === 'production'
+        ? 'The NEXT_PUBLIC_API_URL environment variable must be set in the Vercel deployment.'
+        : 'Set NEXT_PUBLIC_API_URL in your .env file or start the backend with npm run dev:backend.')
+    )
+  }
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    return response
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(
+        'Backend request timed out. The server may be unavailable or overloaded. Please try again.'
+      )
+    }
+
+    // Network error or CORS failure
+    const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('fetch')) {
+      throw new Error(
+        `Unable to connect to Optima AI backend at ${API_BASE_URL}. ` +
+        'Please check that the API server is deployed and accessible.'
+      )
+    }
+
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+/**
+ * Reads and returns a descriptive error message from an HTTP error response.
+ */
+async function parseHttpError(response: Response, fallbackMessage: string): Promise<string> {
+  try {
+    const body = await response.json()
+    if (body.error) return body.error
+    if (body.message) return body.message
+  } catch {
+    // Response body is not JSON
+    try {
+      const text = await response.text()
+      if (text.length > 0 && text.length < 500) return text
+    } catch {
+      // Could not read body
+    }
+  }
+
+  // Map common HTTP status codes to user-friendly messages
+  switch (response.status) {
+    case 400: return `Bad Request: ${fallbackMessage}`
+    case 402: return 'Payment required to proceed with optimization.'
+    case 413: return 'Payload Too Large: Source code exceeds maximum allowed size.'
+    case 429: return 'Too Many Requests: Rate limit exceeded. Please wait a minute and try again.'
+    case 500: return 'Internal Server Error: The backend encountered an unexpected error.'
+    case 502: return 'Bad Gateway: The backend server may be starting up. Please try again in a moment.'
+    case 503: return 'Service Unavailable: The backend is temporarily unavailable.'
+    default: return `${fallbackMessage} (HTTP ${response.status})`
+  }
+}
+
 class X402Client {
   private baseUrl: string
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    this.baseUrl = API_BASE_URL
   }
 
   async connectWallet(): Promise<string> {
@@ -127,25 +211,27 @@ class X402Client {
   }
 
   async executeCode(code: string, language: string, stdin?: string): Promise<{ stdout: string; stderr: string; exitCode: number; timeMs: number }> {
-    const res = await fetch(`${this.baseUrl}/execute`, {
+    const res = await fetchWithTimeout(`${this.baseUrl}/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, language, stdin }),
     })
     if (!res.ok) {
-      throw new Error('Code execution failed')
+      const msg = await parseHttpError(res, 'Code execution failed')
+      throw new Error(msg)
     }
     return await res.json()
   }
 
   async generateTestCases(code: string, language: string): Promise<TestCaseItem[]> {
-    const res = await fetch(`${this.baseUrl}/generate-test-cases`, {
+    const res = await fetchWithTimeout(`${this.baseUrl}/generate-test-cases`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, language }),
     })
     if (!res.ok) {
-      throw new Error('Failed to generate test cases')
+      const msg = await parseHttpError(res, 'Failed to generate test cases')
+      throw new Error(msg)
     }
     const data = await res.json()
     return (data.testCases || []).map(
@@ -161,27 +247,28 @@ class X402Client {
   }
 
   async sendChatMessage(message: string, history: Array<{ role: string; content: string }> = []): Promise<string> {
-    const res = await fetch(`${this.baseUrl}/chat`, {
+    const res = await fetchWithTimeout(`${this.baseUrl}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, history }),
     })
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || 'Failed to send message to AI Assistant')
+      const msg = await parseHttpError(res, 'Failed to send message to AI Assistant')
+      throw new Error(msg)
     }
     const data = await res.json()
     return data.reply
   }
 
   async createChallenge(code: string, language: string): Promise<PaymentDetails> {
-    const res = await fetch(`${this.baseUrl}/payment/challenge`, {
+    const res = await fetchWithTimeout(`${this.baseUrl}/payment/challenge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, language }),
     })
     if (!res.ok) {
-      throw new Error('Failed to issue payment challenge')
+      const msg = await parseHttpError(res, 'Failed to issue payment challenge')
+      throw new Error(msg)
     }
     const data = await res.json()
     return data.payment
@@ -193,7 +280,7 @@ class X402Client {
   ): Promise<OptimizationResponse> {
     const isDevBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_PAYMENT === 'true'
 
-    const initialResponse = await fetch(`${this.baseUrl}/optimize`, {
+    const initialResponse = await fetchWithTimeout(`${this.baseUrl}/optimize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -212,7 +299,7 @@ class X402Client {
 
       const txId = await avmWalletManager.payUSDC(paymentDetails)
 
-      const paidResponse = await fetch(`${this.baseUrl}/optimize`, {
+      const paidResponse = await fetchWithTimeout(`${this.baseUrl}/optimize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -227,19 +314,35 @@ class X402Client {
       })
 
       if (!paidResponse.ok) {
-        const errorMsg = await paidResponse.text()
-        throw new Error(`Optimization failed after payment: ${errorMsg}`)
+        const msg = await parseHttpError(paidResponse, 'Optimization failed after payment')
+        throw new Error(msg)
       }
 
       return await paidResponse.json()
     }
 
     if (!initialResponse.ok) {
-      const errorMsg = await initialResponse.text()
-      throw new Error(`Optimization request failed: ${errorMsg}`)
+      const msg = await parseHttpError(initialResponse, 'Optimization request failed')
+      throw new Error(msg)
     }
 
     return await initialResponse.json()
+  }
+
+  /**
+   * Check if the backend is reachable. Returns the health response or null on failure.
+   */
+  async checkHealth(): Promise<{ status: string; [key: string]: unknown } | null> {
+    if (!this.baseUrl) return null
+    try {
+      const res = await fetchWithTimeout(`${this.baseUrl}/health`, {
+        method: 'GET',
+      }, 5000) // 5 second timeout for health checks
+      if (!res.ok) return null
+      return await res.json()
+    } catch {
+      return null
+    }
   }
 }
 

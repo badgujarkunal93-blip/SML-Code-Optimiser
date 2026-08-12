@@ -46,10 +46,27 @@ function checkRateLimit(clientIp: string, maxRequests = CONFIG.SECURITY.RATE_LIM
   return true;
 }
 
+// Build CORS allowed origins
+const allowedOrigins: string[] = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://sml-code-optimiser.vercel.app',
+];
+if (CONFIG.FRONTEND_URL && !allowedOrigins.includes(CONFIG.FRONTEND_URL)) {
+  allowedOrigins.push(CONFIG.FRONTEND_URL);
+}
+
 app.use(
   "*",
   cors({
-    origin: "*",
+    origin: (origin) => {
+      // Allow requests with no origin (e.g. curl, server-to-server) in development
+      if (!origin) return CONFIG.NODE_ENV !== 'production' ? '*' : null;
+      const isAllowed = allowedOrigins.some((allowed) =>
+        origin === allowed || origin.endsWith('.vercel.app')
+      );
+      return isAllowed ? origin : null;
+    },
     allowHeaders: ["Content-Type", "X-Payment-TxID", "X-Request-ID", "Authorization"],
     allowMethods: ["GET", "POST", "OPTIONS"],
   })
@@ -553,4 +570,5 @@ console.log(`🚀 OptimaAI Backend Hardened Server running on port ${port}`);
 serve({
   fetch: app.fetch,
   port: CONFIG.PORT,
+  hostname: '0.0.0.0',
 });

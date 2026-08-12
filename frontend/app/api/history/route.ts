@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { API_BASE_URL } from "@/lib/apiConfig";
 
 const DEMO_RECORDS = [
   {
@@ -67,10 +68,9 @@ const DEMO_RECORDS = [
 ];
 
 export async function GET() {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (backendUrl && backendUrl !== "http://localhost:3001") {
+  if (API_BASE_URL) {
     try {
-      const res = await fetch(`${backendUrl.replace(/\/$/, "")}/history`, { next: { revalidate: 0 } });
+      const res = await fetch(`${API_BASE_URL}/history`, { next: { revalidate: 0 } });
       if (res.ok) {
         const data = await res.json();
         return NextResponse.json(data);

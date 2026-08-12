@@ -77,7 +77,7 @@ async function runHardeningTests() {
     code: alteredCode,
     language: 'python',
   })
-  assert(payloadMismatchCheck.error?.includes('PAYLOAD_MISMATCH'), 'Payload Code Mismatch Rejection (Cryptographic hash tampering check)')
+  assert(Boolean(payloadMismatchCheck.error?.includes('PAYLOAD_MISMATCH')), 'Payload Code Mismatch Rejection (Cryptographic hash tampering check)')
 
   // Replay Attack Test: Dev bypass simulated tx
   if (CONFIG.DEV_BYPASS_PAYMENT && CONFIG.NODE_ENV !== 'production') {

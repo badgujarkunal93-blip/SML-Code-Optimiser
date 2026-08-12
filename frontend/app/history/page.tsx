@@ -11,8 +11,7 @@ import {
   setActiveWorkspaceCode,
   SavedHistoryRecord,
 } from "@/lib/historyStore";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { API_BASE_URL } from "@/lib/apiConfig";
 
 interface HistoryRecord {
   id?: string;
@@ -98,8 +97,8 @@ export default function HistoryPage() {
     try {
       let res = await fetch("/api/history").catch(() => null);
       if (!res || !res.ok) {
-        if (API_BASE_URL && API_BASE_URL !== "http://localhost:3001") {
-          res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/history`).catch(() => null);
+        if (API_BASE_URL) {
+          res = await fetch(`${API_BASE_URL}/history`).catch(() => null);
         }
       }
 
