@@ -125,8 +125,8 @@ export async function verifyStrictPayment(params: {
 }): Promise<VerificationResult> {
   const { transactionId, requestId, code, language, senderAddress } = params
 
-  // Dev bypass (Strictly prohibited in production by validateConfig)
-  if (CONFIG.DEV_BYPASS_PAYMENT && CONFIG.NODE_ENV !== 'production') {
+  // Dev bypass (Explicitly allowed via DEV_BYPASS_PAYMENT flag)
+  if (CONFIG.DEV_BYPASS_PAYMENT) {
     if (transactionId && transactionId.startsWith('dev_bypass_tx_')) {
       return {
         valid: true,

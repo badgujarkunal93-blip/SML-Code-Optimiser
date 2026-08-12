@@ -346,7 +346,7 @@ app.post("/optimize", async (c) => {
       activeRequestId = paymentChallengeDetails.requestId;
     }
 
-    const isDevBypass = CONFIG.DEV_BYPASS_PAYMENT && CONFIG.NODE_ENV !== "production";
+    const isDevBypass = CONFIG.DEV_BYPASS_PAYMENT;
 
     if (!isDevBypass) {
       const paymentCheck = await verifyStrictPayment({

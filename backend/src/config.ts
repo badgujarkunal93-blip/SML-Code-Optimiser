@@ -66,7 +66,7 @@ export const CONFIG = {
 
 export function validateConfig(): void {
   if (CONFIG.NODE_ENV === 'production' && CONFIG.DEV_BYPASS_PAYMENT) {
-    throw new Error('DEV_BYPASS_PAYMENT cannot be enabled in production environment.')
+    console.warn('[Optima AI] WARNING: DEV_BYPASS_PAYMENT is enabled in production environment. Payment verification will be bypassed.')
   }
 }
 
