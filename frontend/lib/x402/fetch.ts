@@ -276,7 +276,7 @@ class X402Client {
 
   async optimize(
     request: OptimizationRequest,
-    onPaymentRequired: (payment: PaymentDetails) => Promise<boolean>
+    onPaymentRequired?: (payment: PaymentDetails) => Promise<boolean>
   ): Promise<OptimizationResponse> {
     const isDevBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_PAYMENT === 'true'
 
@@ -291,6 +291,10 @@ class X402Client {
     if (initialResponse.status === 402 && !isDevBypass) {
       const errorData: X402PaymentError = await initialResponse.json()
       const paymentDetails = errorData.payment || (await this.createChallenge(request.code, request.language))
+
+      if (!onPaymentRequired) {
+        throw new Error('Payment required to proceed with optimization.')
+      }
 
       const approved = await onPaymentRequired(paymentDetails)
       if (!approved) {

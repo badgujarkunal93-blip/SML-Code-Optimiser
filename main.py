@@ -22,6 +22,12 @@ app.include_router(optimize.router)
 app.include_router(history.router)
 
 
+@app.get("/", tags=["Health"])
+async def root():
+    return {"status": "ok", "message": "Optima AI Backend API is running"}
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok"}
+

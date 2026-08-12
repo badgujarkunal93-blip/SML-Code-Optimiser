@@ -1,7 +1,7 @@
 import prettier from "prettier/standalone";
-import parserBabel from "prettier/plugins/babel";
-import parserEstree from "prettier/plugins/estree";
-import parserTypeScript from "prettier/plugins/typescript";
+import * as parserBabel from "prettier/plugins/babel";
+import * as parserEstree from "prettier/plugins/estree";
+import * as parserTypeScript from "prettier/plugins/typescript";
 
 export async function formatSourceCode(code: string, language: string): Promise<string> {
   if (!code || !code.trim()) return code;
