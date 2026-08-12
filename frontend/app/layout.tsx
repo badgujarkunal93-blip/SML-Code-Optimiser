@@ -4,6 +4,7 @@ import "./globals.css";
 import { InteractiveDotGrid } from "@/app/components/InteractiveDotGrid";
 import { ThemeProvider } from "@/app/components/ThemeProvider";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { NavLinks } from "@/app/components/NavLinks";
 
 export const metadata: Metadata = {
   title: "Optima AI — Autonomous Code Optimization Platform",
@@ -64,44 +65,7 @@ export default function RootLayout({
               </Link>
 
               {/* Reusable SaaS Routes */}
-              <div className="hidden md:flex gap-6 items-center text-xs font-mono font-semibold">
-                <Link
-                  href="/"
-                  className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors py-1.5 px-3 rounded-lg hover:bg-[var(--card-elevated)]"
-                >
-                  Home
-                </Link>
-                <Link
-                  href="/workspace"
-                  className="text-[var(--primary)] font-bold py-1.5 px-3 rounded-lg bg-[var(--primary)]/10 border border-[var(--primary)]/30"
-                >
-                  Workspace (IDE)
-                </Link>
-                <Link
-                  href="/results"
-                  className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors py-1.5 px-3 rounded-lg hover:bg-[var(--card-elevated)]"
-                >
-                  Results
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors py-1.5 px-3 rounded-lg hover:bg-[var(--card-elevated)]"
-                >
-                  Analytics
-                </Link>
-                <Link
-                  href="/history"
-                  className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors py-1.5 px-3 rounded-lg hover:bg-[var(--card-elevated)]"
-                >
-                  History
-                </Link>
-                <Link
-                  href="/settings"
-                  className="text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors py-1.5 px-3 rounded-lg hover:bg-[var(--card-elevated)]"
-                >
-                  Settings
-                </Link>
-              </div>
+              <NavLinks />
 
               <div className="flex items-center gap-3">
                 <ThemeToggle />
