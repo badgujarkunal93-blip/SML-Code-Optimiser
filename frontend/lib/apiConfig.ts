@@ -11,11 +11,12 @@ function getApiBaseUrl(): string {
 
   if (process.env.NODE_ENV === 'production') {
     if (!url || url.includes('localhost') || url.includes('127.0.0.1')) {
-      console.error(
-        '[Optima AI] CRITICAL: NEXT_PUBLIC_API_URL is not configured for production deployment. ' +
-        'All backend API calls will fail. Set this environment variable in Vercel to your deployed backend HTTPS URL.'
-      );
-      // Return empty string — individual fetch calls will fail with descriptive errors
+      if (typeof window !== 'undefined') {
+        console.warn(
+          '[Optima AI] NEXT_PUBLIC_API_URL is not configured. ' +
+          'To connect live API optimizations, set NEXT_PUBLIC_API_URL in your Vercel project environment variables.'
+        );
+      }
       return '';
     }
 
