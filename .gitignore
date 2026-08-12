@@ -19,5 +19,6 @@
 *.log
 __pycache__/
 *.pyc
+.vscode/
 .storage/
 backend/.storage/

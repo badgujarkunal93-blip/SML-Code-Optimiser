@@ -1,6 +1,6 @@
 import logging
 import uuid
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException
 
 from config import MAX_SOURCE_CODE_BYTES
 from models.schemas import OptimizeRequest, OptimizeResponse
