@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
@@ -14,14 +15,20 @@ const NAV_ITEMS = [
 
 export function NavLinks() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="hidden md:flex gap-3 items-center text-xs font-mono font-semibold">
       {NAV_ITEMS.map((item) => {
         const isActive =
-          item.href === "/"
+          mounted &&
+          (item.href === "/"
             ? pathname === "/"
-            : pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            : pathname === item.href || pathname?.startsWith(`${item.href}/`));
 
         return (
           <Link
