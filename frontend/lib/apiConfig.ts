@@ -1,45 +1,37 @@
 /**
  * Centralized API URL configuration for Optima AI frontend.
  *
- * - Production: NEXT_PUBLIC_API_URL must be set to the deployed backend HTTPS URL.
- *   Falls back to empty string if missing (fetch calls will fail with clear errors).
- * - Development: Falls back to http://localhost:3001.
+ * - Automatically detects local execution vs production deployment:
+ *   - Localhost (localhost:3000 / 127.0.0.1): connects to http://localhost:3001
+ *   - Production Deployment (Vercel / Render): connects to NEXT_PUBLIC_API_URL or https://sml-code-optimiser.onrender.com
  */
 
-function getApiBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_API_URL;
-
-  if (process.env.NODE_ENV === 'production') {
-    if (!url || url.includes('localhost') || url.includes('127.0.0.1')) {
-      if (typeof window !== 'undefined') {
-        console.warn(
-          '[Optima AI] NEXT_PUBLIC_API_URL is not configured. ' +
-          'To connect live API optimizations, set NEXT_PUBLIC_API_URL in your Vercel project environment variables.'
-        );
-      }
-      return '';
-    }
-
-    if (!url.startsWith('https://')) {
-      console.warn(
-        '[Optima AI] WARNING: NEXT_PUBLIC_API_URL should use HTTPS in production to avoid mixed-content errors. ' +
-        `Current value: ${url}`
-      );
-    }
-
-    return url.replace(/\/$/, '');
+export function getApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim().length > 0) {
+    return envUrl.replace(/\/$/, '');
   }
 
-  // Development fallback
-  return (url || 'http://localhost:3001').replace(/\/$/, '');
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:3001';
+    }
+    return 'https://sml-code-optimiser.onrender.com';
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://sml-code-optimiser.onrender.com';
+  }
+
+  return 'http://localhost:3001';
 }
 
 export const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Returns true if the API base URL is configured and usable.
- * Use this to show connection status indicators in the UI.
  */
 export function isApiConfigured(): boolean {
-  return API_BASE_URL.length > 0;
+  return true;
 }

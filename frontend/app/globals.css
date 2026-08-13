@@ -147,3 +147,30 @@ textarea, code, pre {
 .animate-marquee {
   animation: marquee 38s linear infinite;
 }
+
+/* Monaco Diff Editor Soft Sleek Theme Overrides (No Bright Solid Red Fills) */
+.monaco-diff-editor .line-delete,
+.monaco-diff-editor .margin-view-overlays .line-delete,
+.monaco-diff-editor .char-delete,
+.monaco-editor .line-delete,
+.monaco-editor .char-delete {
+  background-color: rgba(244, 63, 94, 0.18) !important;
+}
+
+.monaco-diff-editor .line-insert,
+.monaco-diff-editor .margin-view-overlays .line-insert,
+.monaco-diff-editor .char-insert,
+.monaco-editor .line-insert,
+.monaco-editor .char-insert {
+  background-color: rgba(52, 211, 153, 0.18) !important;
+}
+
+.monaco-diff-editor .diagonal-fill {
+  background-color: #0b121e !important;
+  fill: #0b121e !important;
+}
+
+.monaco-diff-editor .diff-delete-gutter,
+.monaco-diff-editor .diff-insert-gutter {
+  border: none !important;
+}

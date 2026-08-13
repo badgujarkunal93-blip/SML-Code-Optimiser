@@ -9,7 +9,7 @@ import { saveCodeToHistory, getActiveWorkspaceCode } from "@/lib/historyStore";
 import { formatSourceCode } from "@/lib/prettierFormatter";
 import FolderAuditView from "./FolderAuditView";
 import { FileQualityReport } from "@/lib/folderScanner";
-import Editor, { DiffEditor } from "@monaco-editor/react";
+import OptimaIdeEditor from "@/app/components/OptimaIdeEditor";
 
 const LANGUAGES = [
   { id: "teal", name: "TEAL (Algorand AVM)", ext: "teal" },
@@ -521,85 +521,24 @@ export default function WorkspacePage() {
       {/* 💻 MAIN CENTER EDITOR & RIGHT SIDEBAR */}
       <div className="flex flex-col lg:flex-row gap-6 w-full items-start">
         
-        {/* CENTER MONACO SOURCE EDITOR */}
-        <div className="flex-1 flex flex-col w-full glass-panel rounded-2xl overflow-hidden border border-[var(--border)] shadow-2xl">
-          <div className="bg-[var(--bg-secondary)] p-3 border-b border-[var(--border)] flex justify-between items-center font-mono text-xs text-[var(--text-secondary)]">
-            <span className="font-bold text-[var(--text-primary)]">Source Code Workspace</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  const formatted = await formatSourceCode(code, activeInputLang);
-                  setCode(formatted);
-                }}
-                className="px-2.5 py-1 rounded text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] font-bold border border-[var(--primary)]/30 hover:bg-[var(--primary)]/20 transition-all flex items-center gap-1"
-                title="Format code using Prettier"
-              >
-                <span>⚡ Prettier Format</span>
-              </button>
-              <button
-                onClick={() => setViewMode("split")}
-                className={`px-2.5 py-1 rounded text-[10px] ${viewMode === "split" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}
-              >
-                Split View
-              </button>
-              <button
-                onClick={() => setViewMode("unified")}
-                className={`px-2.5 py-1 rounded text-[10px] ${viewMode === "unified" ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-[var(--text-muted)]"}`}
-              >
-                Unified Diff
-              </button>
-            </div>
-          </div>
-
-          <div className="p-2 font-mono text-xs min-h-[460px] bg-[#1e1e1e] rounded-b-xl overflow-hidden">
-            {result ? (
-              <DiffEditor
-                height="460px"
-                language={getMonacoLanguage(activeInputLang)}
-                original={code}
-                modified={result.optimizedCode}
-                theme="vs-dark"
-                options={{
-                  renderSideBySide: viewMode === "split",
-                  readOnly: true,
-                  minimap: { enabled: false },
-                  fontSize: 13,
-                  fontFamily: "'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace",
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  padding: { top: 12, bottom: 12 },
-                  lineNumbersMinChars: 3,
-                  smoothScrolling: true,
-                }}
-              />
-            ) : (
-              <Editor
-                height="460px"
-                language={getMonacoLanguage(activeInputLang)}
-                value={code}
-                onChange={(value) => setCode(value || "")}
-                theme="vs-dark"
-                options={{
-                  fontSize: 13,
-                  fontFamily: "'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace",
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  tabSize: 2,
-                  padding: { top: 12, bottom: 12 },
-                  lineNumbersMinChars: 3,
-                  smoothScrolling: true,
-                  cursorBlinking: "smooth",
-                  cursorSmoothCaretAnimation: "on",
-                  folding: true,
-                  bracketPairColorization: { enabled: true },
-                }}
-              />
-            )}
-          </div>
+        {/* CENTER CURSOR-STYLE OPTIMA IDE EDITOR */}
+        <div className="flex-1 flex flex-col w-full min-w-0">
+          <OptimaIdeEditor
+            code={code}
+            onChange={(val) => setCode(val)}
+            language={activeInputLang}
+            optimizedCode={result?.optimizedCode}
+            viewMode={viewMode}
+            onViewModeChange={(mode) => setViewMode(mode)}
+            onFormat={async () => {
+              const formatted = await formatSourceCode(code, activeInputLang);
+              setCode(formatted);
+            }}
+            height="480px"
+          />
 
           {/* Bottom Metrics */}
-          <div className="bg-[var(--bg-secondary)] p-4 border-t border-[var(--border)] grid grid-cols-4 gap-4 font-mono text-xs text-center">
+          <div className="mt-4 bg-[var(--card)] p-4 rounded-xl border border-[var(--border)] grid grid-cols-4 gap-4 font-mono text-xs text-center shadow-lg">
             <div>
               <div className="text-[10px] text-[var(--text-muted)]">Runtime Saved</div>
               <div className="text-[var(--primary)] font-bold text-lg">{result ? `${result.metrics.improvementPct}%` : "+42%"}</div>

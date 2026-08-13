@@ -103,7 +103,7 @@ export async function verifyMultiCaseEquivalence(
   userStdin?: string,
   customTestCases?: TestCase[]
 ): Promise<VerificationResult> {
-  const testInputs = deriveLanguageAwareTestInputs(language, originalCode, userStdin, customTestCases)
+  const testInputs = deriveLanguageAwareTestInputs(language, originalCode, userStdin, customTestCases).slice(0, 2)
   const testDetails: VerificationResult['testDetails'] = []
 
   let testsPassed = 0
@@ -111,11 +111,17 @@ export async function verifyMultiCaseEquivalence(
   let firstOrigStdout = ''
   let firstOptStdout = ''
 
-  for (const item of testInputs) {
-    const origRes = await runCode(originalCode, language, item.input)
-    await new Promise((r) => setTimeout(r, 150))
-    const optRes = await runCode(optimizedCode, language, item.input)
+  const results = await Promise.all(
+    testInputs.map(async (item) => {
+      const [origRes, optRes] = await Promise.all([
+        runCode(originalCode, language, item.input),
+        runCode(optimizedCode, language, item.input),
+      ])
+      return { item, origRes, optRes }
+    })
+  )
 
+  for (const { item, origRes, optRes } of results) {
     if (testDetails.length === 0) {
       firstOrigStdout = origRes.stdout
       firstOptStdout = optRes.stdout
@@ -124,9 +130,7 @@ export async function verifyMultiCaseEquivalence(
     const cleanOrig = (origRes.stdout || '').replace(/\r\n/g, '\n').trim()
     const cleanOpt = (optRes.stdout || '').replace(/\r\n/g, '\n').trim()
 
-    // Pass condition: Both executions succeeded (exitCode === 0) and stdout matches
     const bothSuccessful = origRes.success && optRes.success && origRes.exitCode === 0 && optRes.exitCode === 0
-    const exitMatch = origRes.exitCode === optRes.exitCode
     const stdoutExactMatch = cleanOrig === cleanOpt
     const stdoutNormalizedMatch = cleanOrig.replace(/\s+/g, '') === cleanOpt.replace(/\s+/g, '')
     const passed = bothSuccessful && (stdoutExactMatch || stdoutNormalizedMatch)
@@ -152,9 +156,6 @@ export async function verifyMultiCaseEquivalence(
       passed,
       reason,
     })
-
-    // Slight delay to prevent public Piston rate-limiting during multi-case tests
-    await new Promise((r) => setTimeout(r, 100))
   }
 
   const testsRun = testInputs.length

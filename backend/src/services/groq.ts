@@ -130,8 +130,10 @@ Analyze the provided code for performance bottlenecks, algorithmic complexity, a
 
 CRITICAL MANDATORY RULES:
 1. LANGUAGE PRESERVATION: The output code MUST be written in the EXACT SAME programming language as specified in the prompt. NEVER translate to another language under any circumstances unless explicitly requested.
-2. NO CODE COMMENTS: Do NOT insert explanatory comments inside the optimized_code string. The optimized_code block must contain ONLY clean, executable source code without artificial filler comments. All explanations MUST be provided in the reasoning and suggestions fields.
-3. FORMATTING & BEAUTIFICATION: Output clean, beautifully formatted multi-line code following standard language conventions.
+2. PRESERVE FUNCTION & ENTRYPOINT NAMES: The optimized code MUST preserve exact function names, class names, method signatures, and entrypoints from the original code (e.g. if original defines def bubble_sort(a):, optimized code MUST keep def bubble_sort(a):). NEVER rename main functions to generic names like optimized_sort.
+3. NO CODE COMMENTS: Do NOT insert explanatory comments inside the optimized_code string. The optimized_code block must contain ONLY clean, executable source code without artificial filler comments. All explanations MUST be provided in the reasoning and suggestions fields.
+4. FORMATTING & BEAUTIFICATION: Output clean, beautifully formatted multi-line code following standard language conventions.
+5. ALREADY OPTIMAL CODE: If the input code is ALREADY optimal (e.g., already O(1) or O(n log n) with no algorithmic bottlenecks), set optimized_code equal to the input code, set time_complexity original equal to optimized, and explicitly state in reasoning: "Code is already algorithmically optimal. No further performance gain required."
 4. DESCRIPTIVE NAMING: Improve single-letter or cryptic variable names when safe.
 5. Output MUST strictly be a JSON object with the following schema:
 {

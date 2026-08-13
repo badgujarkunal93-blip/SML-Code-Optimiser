@@ -1,5 +1,5 @@
 import { avmWalletManager, PaymentDetails } from './avm'
-import { API_BASE_URL } from '../apiConfig'
+import { API_BASE_URL, getApiBaseUrl } from '../apiConfig'
 
 // Default request timeout (60 seconds for Render free tier cold starts)
 const REQUEST_TIMEOUT_MS = 60_000
@@ -140,8 +140,11 @@ async function fetchWithTimeout(
     return response
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === 'AbortError') {
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       throw new Error(
-        'Backend request timed out. Free hosting platforms (like Render) take 45–60 seconds to wake up from cold start. Please try clicking again now that the server is awake.'
+        isLocal
+          ? 'Backend request timed out on local server (http://localhost:3001). Please check that the local backend server is running.'
+          : 'Backend request timed out. Free hosting platforms (like Render) take 45–60 seconds to wake up from cold start. Please try clicking again now that the server is awake.'
       )
     }
 
@@ -192,10 +195,8 @@ async function parseHttpError(response: Response, fallbackMessage: string): Prom
 }
 
 class X402Client {
-  private baseUrl: string
-
-  constructor() {
-    this.baseUrl = API_BASE_URL
+  get baseUrl(): string {
+    return getApiBaseUrl()
   }
 
   async connectWallet(): Promise<string> {
