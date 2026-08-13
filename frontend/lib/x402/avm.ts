@@ -97,17 +97,30 @@ export class AVMWalletManager {
 
     const params = await this.algodClient.getTransactionParams().do()
 
-    // 1 USDC ASA = 1,000,000 microUSDC (decimals = 6)
-    const amountInMicroUSDC = Math.round(paymentDetails.amount * 1000000)
+    let txn: algosdk.Transaction
 
-    const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-      sender: this.walletAddress,
-      receiver: paymentDetails.address,
-      assetIndex: paymentDetails.asset,
-      amount: amountInMicroUSDC,
-      suggestedParams: params,
-      note: new TextEncoder().encode(paymentDetails.note || `OptiChain Payment`),
-    })
+    if (paymentDetails.asset === 0 || !paymentDetails.asset) {
+      // Native ALGO Payment (1 ALGO = 1,000,000 microAlgos)
+      const amountInMicroAlgos = Math.round(paymentDetails.amount * 1000000)
+      txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        sender: this.walletAddress,
+        receiver: paymentDetails.address,
+        amount: amountInMicroAlgos,
+        suggestedParams: params,
+        note: new TextEncoder().encode(paymentDetails.note || `Optima AI Payment`),
+      })
+    } else {
+      // ASA Transfer (e.g. USDC ASA)
+      const amountInMicroUSDC = Math.round(paymentDetails.amount * 1000000)
+      txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: this.walletAddress,
+        receiver: paymentDetails.address,
+        assetIndex: paymentDetails.asset,
+        amount: amountInMicroUSDC,
+        suggestedParams: params,
+        note: new TextEncoder().encode(paymentDetails.note || `Optima AI Payment`),
+      })
+    }
 
     let signedTxns: Uint8Array[]
     try {

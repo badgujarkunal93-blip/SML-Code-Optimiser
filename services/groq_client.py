@@ -127,7 +127,7 @@ async def optimize_code(code: str, language: str) -> Dict[str, str]:
         logger.info(f"[Groq API] Attempt {attempt_idx}/2 initiating call for language={language}...")
         try:
             response = await client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": prompt_config["system"]},
                     {"role": "user", "content": prompt_config["user"]}

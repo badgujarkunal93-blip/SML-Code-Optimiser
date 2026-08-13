@@ -9,6 +9,7 @@ class OptimizeRequest(BaseModel):
 
 class OptimizeResponse(BaseModel):
     optimized_code: str
+    optimizedCode: Optional[str] = None
     reasoning: str
     original_time_ms: Optional[float] = None
     optimized_time_ms: Optional[float] = None

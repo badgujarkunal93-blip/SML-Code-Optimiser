@@ -281,57 +281,75 @@ class X402Client {
   ): Promise<OptimizationResponse> {
     const isDevBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_PAYMENT === 'true'
 
-    const initialResponse = await fetchWithTimeout(`${this.baseUrl}/optimize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    })
+    // ── Pay-First Flow: Always collect Pera Wallet payment BEFORE optimization ──
+    let txId = ''
+    const priceAlgo = parseFloat(process.env.NEXT_PUBLIC_OPTIMIZATION_PRICE_USDC || '0.001')
+    const assetId = parseInt(process.env.NEXT_PUBLIC_USDC_ASSET_ID || '0', 10)
+    const serviceAddress =
+      process.env.NEXT_PUBLIC_ALGORAND_SERVICE_ADDRESS ||
+      avmWalletManager.getConnectedAddress() ||
+      ''
 
-    if (initialResponse.status === 402 && !isDevBypass) {
-      const errorData: X402PaymentError = await initialResponse.json()
-      const paymentDetails = errorData.payment || (await this.createChallenge(request.code, request.language))
-
-      if (!onPaymentRequired) {
-        throw new Error('Payment required to proceed with optimization.')
+    if (!isDevBypass && onPaymentRequired) {
+      // Build a local payment challenge (no backend 402 needed)
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+      const paymentDetails: PaymentDetails = {
+        address: serviceAddress,
+        amount: priceAlgo,
+        asset: assetId,
+        note: `Optima AI Optimization: ${requestId}`,
+        facilitator: 'local',
+        requestId,
+        expiresAt: Date.now() + 300_000,
       }
 
+      // Show modal and wait for user approval
       const approved = await onPaymentRequired(paymentDetails)
       if (!approved) {
         throw new Error('Payment was cancelled by user')
       }
 
-      const txId = await avmWalletManager.payUSDC(paymentDetails)
-
-      const paidResponse = await fetchWithTimeout(`${this.baseUrl}/optimize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Payment-TxID': txId,
-          'X-Request-ID': paymentDetails.requestId || '',
-        },
-        body: JSON.stringify({
-          ...request,
-          transactionId: txId,
-          requestId: paymentDetails.requestId || '',
-        }),
-      })
-
-      if (!paidResponse.ok) {
-        const msg = await parseHttpError(paidResponse, 'Optimization failed after payment')
-        throw new Error(msg)
-      }
-
-      return await paidResponse.json()
+      // Sign and broadcast the transaction via Pera Wallet
+      txId = await avmWalletManager.payUSDC(paymentDetails)
     }
 
-    if (!initialResponse.ok) {
-      const msg = await parseHttpError(initialResponse, 'Optimization request failed')
+    // ── Call the backend with the signed transaction ID ──
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (txId) {
+      headers['X-Payment-TxID'] = txId
+    }
+
+    const response = await fetchWithTimeout(`${this.baseUrl}/optimize`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        ...request,
+        ...(txId ? { transactionId: txId } : {}),
+      }),
+    })
+
+    if (!response.ok) {
+      const msg = await parseHttpError(response, 'Optimization request failed')
       throw new Error(msg)
     }
 
-    return await initialResponse.json()
+    const data = await response.json()
+
+    // Attach transaction info to the response for the receipt card
+    if (txId) {
+      data.transaction = {
+        id: txId,
+        amount: priceAlgo,
+        asset: assetId,
+        explorerUrl: `https://testnet.algoexplorer.io/tx/${txId}`,
+        settled: true,
+        facilitator: 'Algorand Testnet',
+      }
+    }
+
+    return data
   }
 
   /**

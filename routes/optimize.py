@@ -86,6 +86,7 @@ async def optimize_code_endpoint(payload: OptimizeRequest) -> OptimizeResponse:
 
     response_data = OptimizeResponse(
         optimized_code=optimized_code,
+        optimizedCode=optimized_code,
         reasoning=benchmark_result.get("reasoning", reasoning),
         original_time_ms=orig_time,
         optimized_time_ms=opt_time,
