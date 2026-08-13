@@ -27,7 +27,8 @@ export const CONFIG = {
     INDEXER_URL: process.env.ALGORAND_INDEXER_URL || 'https://testnet-idx.algonode.cloud',
     USDC_ASSET_ID: parseInt(process.env.USDC_ASSET_ID || '31566704', 10),
     SERVICE_ADDRESS: process.env.ALGORAND_SERVICE_ADDRESS || 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-    REQUIRED_PAYMENT_AMOUNT: parseFloat(process.env.REQUIRED_PAYMENT_AMOUNT || '0.001'),
+    REQUIRED_PAYMENT_AMOUNT: parseFloat(process.env.OPTIMIZATION_PRICE_USDC || process.env.REQUIRED_PAYMENT_AMOUNT || '0.001'),
+    OPTIMIZATION_PRICE_USDC: parseFloat(process.env.OPTIMIZATION_PRICE_USDC || process.env.REQUIRED_PAYMENT_AMOUNT || '0.001'),
   },
   FACILITATOR: {
     URL: process.env.FACILITATOR_URL || 'https://facilitator.goplausible.xyz',

@@ -109,15 +109,33 @@ export class AVMWalletManager {
       note: new TextEncoder().encode(paymentDetails.note || `OptiChain Payment`),
     })
 
-    const singleTxnGroup = [{ txn, signers: [this.walletAddress] }]
-    const pera = this.getPeraWallet()
-    const signedTxns = await pera.signTransaction([singleTxnGroup])
+    let signedTxns: Uint8Array[]
+    try {
+      const singleTxnGroup = [{ txn, signers: [this.walletAddress] }]
+      const pera = this.getPeraWallet()
+      signedTxns = await pera.signTransaction([singleTxnGroup])
+    } catch (err: unknown) {
+      const errorObj = err as { data?: { type?: string }; message?: string }
+      if (
+        errorObj?.data?.type === 'SIGN_TXN_CANCELLED' ||
+        errorObj?.message?.includes('cancelled') ||
+        errorObj?.message?.includes('rejected') ||
+        errorObj?.message?.includes('closed')
+      ) {
+        throw new Error('Payment signing was cancelled by user.')
+      }
+      throw new Error(errorObj?.message || 'Transaction signing failed.')
+    }
 
-    const sendRes = await this.algodClient.sendRawTransaction(signedTxns).do()
-    const txId = sendRes.txid
-
-    await this.waitForConfirmation(txId, 3)
-    return txId
+    try {
+      const sendRes = await this.algodClient.sendRawTransaction(signedTxns).do()
+      const txId = sendRes.txid
+      await this.waitForConfirmation(txId, 5)
+      return txId
+    } catch (sendErr: unknown) {
+      const errorObj = sendErr as { message?: string }
+      throw new Error(`Failed to submit transaction to Algorand: ${errorObj?.message || String(sendErr)}`)
+    }
   }
 
   private async waitForConfirmation(txId: string, timeoutRounds: number = 3): Promise<void> {

@@ -102,6 +102,22 @@ function generateDiffLines(oldCode: string, newCode: string) {
   return diff;
 }
 
+export type PaymentState =
+  | "IDLE"
+  | "PAYMENT_REQUIRED"
+  | "WALLET_CONNECTING"
+  | "WALLET_CONNECTED"
+  | "SIGNING"
+  | "PAYMENT_SUBMITTED"
+  | "VERIFYING"
+  | "SETTLING"
+  | "PAYMENT_CONFIRMED"
+  | "OPTIMIZING"
+  | "BENCHMARKING"
+  | "COMPLETED"
+  | "FAILED"
+  | "CANCELLED";
+
 export default function WorkspacePage() {
   const [code, setCode] = useState<string>(DEFAULT_EXAMPLE);
   const [stdinInput, setStdinInput] = useState<string>("");
@@ -117,6 +133,8 @@ export default function WorkspacePage() {
   const [viewMode, setViewMode] = useState<"split" | "unified">("split");
   const [rightTab, setRightTab] = useState<"ai" | "execution" | "testcases">("ai");
   const [workspaceMode, setWorkspaceMode] = useState<"snippet" | "folder">("snippet");
+
+  const [paymentState, setPaymentState] = useState<PaymentState>("IDLE");
 
   const handleSelectFileFromFolder = (file: FileQualityReport) => {
     setCode(file.code);
@@ -176,11 +194,28 @@ export default function WorkspacePage() {
   // Dev mode flag
   const isDevBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_PAYMENT === "true";
 
-  // Wallet Connection state
+  // Wallet & Payment State Machine
+  export type PaymentState =
+    | "IDLE"
+    | "PAYMENT_REQUIRED"
+    | "WALLET_CONNECTING"
+    | "WALLET_CONNECTED"
+    | "SIGNING"
+    | "PAYMENT_SUBMITTED"
+    | "VERIFYING"
+    | "SETTLING"
+    | "PAYMENT_CONFIRMED"
+    | "OPTIMIZING"
+    | "BENCHMARKING"
+    | "COMPLETED"
+    | "FAILED"
+    | "CANCELLED";
+
+  const [paymentState, setPaymentState] = useState<PaymentState>("IDLE");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [, setShowPaymentModal] = useState<boolean>(false);
-  const [, setPendingPayment] = useState<PaymentDetails | null>(null);
-  const [, setPaymentResolver] = useState<((approved: boolean) => void) | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [pendingPayment, setPendingPayment] = useState<PaymentDetails | null>(null);
+  const [paymentResolver, setPaymentResolver] = useState<((approved: boolean) => void) | null>(null);
 
   const [savedNotification, setSavedNotification] = useState<string | null>(null);
 
@@ -222,11 +257,14 @@ export default function WorkspacePage() {
 
   const handleConnectWallet = async () => {
     if (isDevBypass) return;
+    setPaymentState("WALLET_CONNECTING");
     try {
       setError(null);
       const addr = await x402Client.connectWallet();
       setWalletAddress(addr);
+      setPaymentState("WALLET_CONNECTED");
     } catch (err: unknown) {
+      setPaymentState("FAILED");
       const errorObj = err as { message?: string };
       if (errorObj.message !== "Wallet connection was closed.") {
         setError(errorObj.message || "Failed to connect Pera Wallet");
@@ -294,6 +332,7 @@ export default function WorkspacePage() {
     setPaymentStatus(null);
     setError(null);
     setResult(null);
+    setPaymentState("OPTIMIZING");
 
     const stagesTimer = setInterval(() => {
       setPipelineStage((prev) => (prev < 6 ? prev + 1 : prev));
@@ -308,11 +347,19 @@ export default function WorkspacePage() {
           if (isDevBypass) return true;
           setPendingPayment(paymentDetails);
           setShowPaymentModal(true);
-          setPaymentStatus("Awaiting Pera Wallet Authorization...");
+          setPaymentState("PAYMENT_REQUIRED");
+          setPaymentStatus("HTTP 402: Awaiting Pera Wallet Payment Authorization...");
 
           return new Promise<boolean>((resolve) => {
             setPaymentResolver(() => (approved: boolean) => {
               setShowPaymentModal(false);
+              if (approved) {
+                setPaymentState("SIGNING");
+                setPaymentStatus("Signing Transaction in Pera Wallet...");
+              } else {
+                setPaymentState("CANCELLED");
+                setPaymentStatus("Payment cancelled by user");
+              }
               resolve(approved);
             });
           });
@@ -323,9 +370,11 @@ export default function WorkspacePage() {
       setPipelineStage(7);
 
       if (isDevBypass) {
+        setPaymentState("COMPLETED");
         setPaymentStatus("Development Mode: Payment Bypassed ✓");
       } else {
-        setPaymentStatus("Transaction Verified & Settled via Plausible Facilitator!");
+        setPaymentState("COMPLETED");
+        setPaymentStatus("Transaction Verified & Settled on Algorand!");
       }
       setResult(response);
 
@@ -335,12 +384,14 @@ export default function WorkspacePage() {
     } catch (err: unknown) {
       clearInterval(stagesTimer);
       const errorObj = err as { message?: string };
-      if (errorObj.message !== "Payment was cancelled by user") {
+      setPaymentState("FAILED");
+      if (errorObj.message !== "Payment was cancelled by user" && errorObj.message !== "Payment signing was cancelled by user.") {
         setError(errorObj.message || "Failed to optimize code");
+      } else {
+        setPaymentStatus("Payment was cancelled.");
       }
     } finally {
       setLoading(false);
-      setShowPaymentModal(false);
     }
   };
 
@@ -670,6 +721,123 @@ export default function WorkspacePage() {
           )}
         </div>
       </div>
+      </div>
+
+      {/* 🧾 ON-CHAIN TRANSACTION RECEIPT CARD (renders after completion) */}
+      {result?.transaction && result.transaction.id && (
+        <div className="bg-[var(--card-elevated)] p-4 rounded-2xl border border-[var(--primary)]/30 font-mono text-xs shadow-xl space-y-2">
+          <div className="flex justify-between items-center border-b border-[var(--border)] pb-2 font-bold">
+            <span className="text-[var(--primary)] flex items-center gap-2">
+              <span>🧾</span> OPTIMA AI PAYMENT RECEIPT
+            </span>
+            <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px]">
+              {result.transaction.settled ? "SETTLED ON ALGORAND ✓" : "SETTLING..."}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
+            <div>
+              <span className="text-[var(--text-muted)] text-[10px] block">Optimization ID:</span>
+              <span className="text-[var(--text-primary)] font-semibold truncate block">{result.optimizationId || result.requestId}</span>
+            </div>
+            <div>
+              <span className="text-[var(--text-muted)] text-[10px] block">Payment Amount:</span>
+              <span className="text-[var(--primary)] font-bold">{result.transaction.amount || 0.001} USDC</span>
+            </div>
+            <div>
+              <span className="text-[var(--text-muted)] text-[10px] block">Algorand Network:</span>
+              <span className="text-[var(--text-primary)] font-semibold">Algorand Testnet</span>
+            </div>
+            <div>
+              <span className="text-[var(--text-muted)] text-[10px] block">Transaction Hash:</span>
+              <a
+                href={result.transaction.explorerUrl || `https://testnet.algorand.com/tx/${result.transaction.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-400 underline font-mono text-[10px] truncate block hover:text-cyan-300"
+              >
+                {result.transaction.id.slice(0, 12)}... ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 💳 PERA WALLET + X402 PAYMENT APPROVAL MODAL */}
+      {showPaymentModal && pendingPayment && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-2xl border border-[var(--primary)]/40 max-w-lg w-full shadow-2xl space-y-5 font-mono text-xs relative animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-[var(--border)] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💳</span>
+                <div>
+                  <h3 className="font-extrabold text-sm text-[var(--text-primary)]">HTTP 402: Payment Required</h3>
+                  <p className="text-[10px] text-[var(--text-muted)]">x402 Protocol • Algorand Pay-Per-Use</p>
+                </div>
+              </div>
+              <button
+                onClick={() => paymentResolver && paymentResolver(false)}
+                className="text-[var(--text-muted)] hover:text-white text-base"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-[var(--bg-secondary)] p-4 rounded-xl border border-[var(--border)] space-y-2 text-[11px]">
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Request ID:</span>
+                <span className="text-[var(--text-primary)] font-bold">{pendingPayment.requestId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Optimization Price:</span>
+                <span className="text-[var(--primary)] font-extrabold text-sm">{pendingPayment.amount} USDC</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Asset ID (USDC):</span>
+                <span className="text-[var(--text-primary)]">{pendingPayment.asset} (Testnet)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Service Receiver:</span>
+                <span className="text-[var(--text-primary)] font-mono text-[10px] truncate max-w-[200px]">{pendingPayment.address}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] text-[var(--text-muted)] block font-bold">Pera Wallet Status:</span>
+              {walletAddress ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-lg text-emerald-400 text-center font-bold">
+                  Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
+                </div>
+              ) : (
+                <button
+                  onClick={handleConnectWallet}
+                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">account_balance_wallet</span>
+                  <span>Connect Pera Wallet</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => paymentResolver && paymentResolver(false)}
+                className="flex-1 py-3 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--card)] text-[var(--text-secondary)] border border-[var(--border)] font-bold transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => paymentResolver && paymentResolver(true)}
+                disabled={!walletAddress || paymentState === "SIGNING"}
+                className="flex-1 py-3 rounded-xl bg-[var(--primary)] hover:opacity-90 text-white dark:text-black font-extrabold shadow-lg shadow-[var(--primary)]/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <span>{paymentState === "SIGNING" ? "Signing in Pera..." : "Approve & Pay with Pera"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )}
 </div>
