@@ -195,22 +195,6 @@ export default function WorkspacePage() {
   const isDevBypass = process.env.NEXT_PUBLIC_DEV_BYPASS_PAYMENT === "true";
 
   // Wallet & Payment State Machine
-  export type PaymentState =
-    | "IDLE"
-    | "PAYMENT_REQUIRED"
-    | "WALLET_CONNECTING"
-    | "WALLET_CONNECTED"
-    | "SIGNING"
-    | "PAYMENT_SUBMITTED"
-    | "VERIFYING"
-    | "SETTLING"
-    | "PAYMENT_CONFIRMED"
-    | "OPTIMIZING"
-    | "BENCHMARKING"
-    | "COMPLETED"
-    | "FAILED"
-    | "CANCELLED";
-
   const [paymentState, setPaymentState] = useState<PaymentState>("IDLE");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
@@ -720,7 +704,6 @@ export default function WorkspacePage() {
             </div>
           )}
         </div>
-      </div>
       </div>
 
       {/* 🧾 ON-CHAIN TRANSACTION RECEIPT CARD (renders after completion) */}
